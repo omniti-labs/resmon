@@ -8,12 +8,12 @@ my $ccdriver_run_interval = q{
 ((case when to_char(sysdate, 'hh24') < 15 then
 		decode(to_char(sysdate, 'D'),
 			1, 12,
-			2, 15, 3, 15, 4, 15, 5, 15, 6, 15,
+			2, 12, 3, 12, 4, 12, 5, 12, 6, 12,
 			7, 12)
 	else
 		decode(to_char(sysdate, 'D'),
 			1, 12,
-			2, 9, 3, 9, 4, 9, 5, 9, 6, 9,
+			2, 12, 3, 12, 4, 12, 5, 12, 6, 12,
 			7, 12)
 	end) + 1)/24};
 
@@ -65,6 +65,13 @@ my %sql_queries = (
                 AND tb.batch_timestamp between sysdate - 1 and sysdate - 3/24
                 AND cc_response_code = 0
 	},
+	missing_batches =>
+	q{
+	SELECT (case when count(1) > 0 THEN 'BAD('||count(1)||' batches stuck at Paymentech)'
+		ELSE 'OK(0)' end) cnt
+	FROM TBLCC_BATCH
+	WHERE job_state != 3 and sysdate - batch_timestamp > 2/24
+	},
 	auth_queue_backlog =>
 	q{
 	SELECT (case when count(*) > 10 then 'BAD('||count(1)||' backlog)'
@@ -76,7 +83,7 @@ my %sql_queries = (
 	q{
         select decode(total-good, 0, 'OK(0 bad subs)', 'BAD('||total-good||' bad subs)')
 	from (
-	select sum(decode(subscription_status, 0, 1, 5, 1, 10, 1, 3, 1, 4, 1, 6, 1, 8, 1, 0)) good, count(1) total 
+	select sum(decode(subscription_status, 0, 1, 2, 1, 5, 1, 10, 1, 3, 1, 4, 1, 6, 1, 8, 1, 0)) good, count(1) total 
         from tblsublotto_subscription 
         where REQUEST_TIMESTAMP between sysdate - 1.1/24 and sysdate - 0.1/24
 	)
@@ -86,6 +93,12 @@ my %sql_queries = (
 	select decode(count(1), 0, 'BAD(0)', 'OK('||count(1)||')') status 
         from tblsublotto_subscription 
         where REQUEST_TIMESTAMP > sysdate - 3/24
+	},
+	c2w_2hour_sales =>
+	q{
+	select decode(count(1),0,'BAD(0 orders)','OK('||count(1)||' orders)')
+	from tblauth_log
+	where external_id_type=13 and auth_state in (2,5) and txn_timestamp > sysdate-1/12
 	},
 	draws_current =>
 	q{
