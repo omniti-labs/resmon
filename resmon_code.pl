@@ -111,6 +111,20 @@ register_monitor('LOGFILE', sub {
   return set_status($arg, "OK($errorcount)");
 });
 
+register_monitor('FILEAGE', sub {
+  my $arg = shift;
+  my $os = fresh_status($arg);
+  return $os if $os;
+  my $file = $arg->{'object'};
+  my @statinfo = stat($file);
+  my $age = time() - $statinfo[9];
+  return set_status($arg, "BAD(to old $age seconds)")
+        if($arg->{maximum} && ($age > $arg->{maximum}));
+  return set_status($arg, "BAD(to new $age seconds)")
+        if($arg->{minimum} && ($age > $arg->{minimum}));
+  return set_status($arg, "OK($age)");
+});
+
 register_monitor('NETSTAT', sub {
   my $arg = shift;
   my $os = fresh_status($arg);
