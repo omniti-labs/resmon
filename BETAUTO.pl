@@ -15,7 +15,7 @@ register_monitor('BETAUTO', sub {
   $datematcher .= ' \d\d:\d\d:\d\d ';
   $datematcher .= POSIX::strftime("%Y", localtime($thistime));
 
-  open(TF, "tail -4 $file1|");
+  open(TF, "tail -5 $file1|");
   my $state = 0;
   while(<TF>) {
     chomp;
@@ -25,13 +25,14 @@ register_monitor('BETAUTO', sub {
     ($state==0) && /Start insert bets/ && ($state = 1);
     ($state==1) && /sublotto/ && ($state = 2);
     ($state==2) && /fwlotto/ && ($state = 3);
-    ($state==3) && /Finish insert bets/ && ($state = 4);
+    ($state==3) && /flezwin/ && ($state = 4);
+    ($state==4) && /Finish insert bets/ && ($state = 5);
   }
   close(TF);
-  if($state != 4 || $error) {
+  if($state != 5 || $error) {
     return set_status($arg, "BAD($error)");
   }
-  return set_status($arg, "OK()");
+  return set_status($arg, "OK(log line expected)");
 });
 
 1;
