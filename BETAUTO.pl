@@ -9,9 +9,9 @@ register_monitor('BETAUTO', sub {
   my $file1 = '/data/logs/subscription/insert_bets.log';
 
   my $thistime = time()-int(86400*(16.5/24));
-
+  my $error;
   my $datematcher = POSIX::strftime("%b %d", localtime($thistime));
-  $datematcher =~ s/0/ /g;
+  $datematcher =~ s/ 0/  /g;
   $datematcher .= ' \d\d:\d\d:\d\d ';
   $datematcher .= POSIX::strftime("%Y", localtime($thistime));
 
