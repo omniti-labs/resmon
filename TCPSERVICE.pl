@@ -18,6 +18,7 @@ sub {
   my $handle = new IO::Handle;
   socket($handle, Socket::PF_INET, Socket::SOCK_STREAM, $proto) ||
     return "BAD(socket error)";
+  $handle->autoflush(1);
   fcntl($handle, Fcntl::F_SETFL, Fcntl::O_NONBLOCK) ||
     (close($handle) && return "BAD(fcntl error)");
   my $sin = Socket::sockaddr_in($port, Socket::inet_aton($host));
@@ -31,12 +32,14 @@ sub {
       close($handle);
       return "BAD(connect failed)";
     }
+    print $handle $arg->{prepost}."\r\n" if ($arg->{prepost});
     ($fd) = $con->can_read($timeout);
     if($fd == $handle) {
       my $banner;
       chomp($banner = <$handle>);
       print $handle $arg->{post} if ($arg->{post});
       close($handle);
+      $banner =~ s/([^\s\d\w.,;\/\\])/sprintf "\\%o", $1/eg;
       return "BAD($banner)"
         if($arg->{match} && ($banner =! /$arg->{match}/));
       return "OK($banner)";
