@@ -1,48 +1,75 @@
 #!/usr/bin/perl
 
-push @INC, '/opt/resmon';
+use lib '/opt/resmon/lib';
 
 use strict;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
+use Data::Dumper;
 use POSIX qw( setsid );
-use vars qw($opt_c $opt_d $opt_f $list);
+use Getopt::Long;
+use vars qw($config_file $debug $status_file $config);
 
-require 'getopts.pl';
-require 'resmon_conf.pl';
-require 'resmon_code.pl';
+use Resmon::Config;
+use Resmon::ExtComm;
+use Resmon::Status;
+use Resmon::Modules;
 
-Getopts('c:df:');
+GetOptions(
+  "c=s" => \$config_file,
+  "d"   => \$debug,
+  "f=s" => \$status_file,
+);
 
-$opt_c ||= 'resmon.conf';
-die "Cannot open configuration file: $opt_c" unless (-r $opt_c);
+$config_file ||= 'resmon.conf';
+die "Cannot open configuration file: $config_file" unless (-r $config_file);
 
 sub configure {
-  $list = parse_config($opt_c);
-  set_statusfile($opt_f) if($opt_f);
+  $config = Resmon::Config->new($config_file);
+  $config->{statusfile} = $status_file if($status_file);
+  print Dumper($config) if($debug);
 }
-unless($opt_d) {
+unless($debug) {
   fork && exit;
   setsid;
 }
 configure();
 $SIG{'HUP'} = \&configure;
+
+use Time::HiRes qw( gettimeofday tv_interval sleep );
+
+my $rmlast = undef;
+sub wait_interval {
+  $rmlast = [gettimeofday] unless defined($rmlast);
+  my $elapsed = $config->{interval} - tv_interval($rmlast);
+  if($elapsed > 0) {
+    sleep($elapsed);
+  }
+  $rmlast = [gettimeofday];
+}
+
+my $list = [];
+my $status = Resmon::Status->new($config->{statusfile});
 while(1) {
-  foreach my $monobj (@$list) {
-    my $coderef = fetch_monitor($monobj->{'type'});
-    unless($coderef) {
-      $coderef = fetch_monitor($monobj->{'type'});
-    }
-    if($coderef) {
-      print_statusfile($monobj->{'object'}."(".$monobj->{'type'}
-			.") :: ".$coderef->($monobj)."\n");
-    } else {
-      print_statusfile($monobj->{'object'}."(".$monobj->{'type'}
-			.") :: BAD(no monitor available)\n");
+  while(my($module_name, $mod_configs) = each %{$config->{Modules}}) {
+    my $coderef = Resmon::Modules::fetch_monitor($module_name);
+    foreach my $monobj (@$mod_configs) {
+      my $check_rv = 'BAD',
+      my $check_mess = 'no data';
+      if($coderef) {
+        eval { ($check_rv, $check_mess) = $coderef->($monobj); };
+      } else {
+        eval { ($check_rv, $check_mess) = $monobj->handler(); };
+      }
+      if($@) {
+        $status->store($module_name,$monobj->{'object'},'BAD',$@);
+      } else {
+        $status->store($module_name,$monobj->{'object'},$check_rv,$check_mess);
+      }
     }
   }
-  close_statusfile();
+  $status->close();
   wait_interval();
   print "\n---- ".localtime(time)."----------\n"
-    unless open_statusfile();
+    unless $status->open();
 }
 

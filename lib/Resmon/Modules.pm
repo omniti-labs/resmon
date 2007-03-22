@@ -1,6 +1,7 @@
-#!/usr/bin/perl
+package Resmon::Modules;
 
-require 'ext_comm.pl';
+use strict;
+use Data::Dumper;
 
 my %coderefs;
 
@@ -10,15 +11,16 @@ sub fetch_monitor {
   my $type = shift;
   my $coderef = $coderefs{$type};
   return $coderef if ($coderef);
-  if ( -r "$type.pl" ) {
-    require "$type.pl";
-  }
-  return $coderef = $coderefs{$type};
+  eval "use $type;";
+  eval "use Resmon::Modules::$type;";
+  return undef;
 }
 
 sub register_monitor {
-  my ($type, $coderef) = @_;
-  $coderefs{$type} = $coderef;
+  my ($type, $ref) = @_;
+  if(ref $ref eq 'CODE') {
+    $coderefs{$type} = $ref;
+  }
   print STDERR "$rmloading $type monitor\n";
 }
 sub fresh_status {
@@ -33,70 +35,79 @@ sub fresh_status {
 sub set_status {
   my $arg = shift;
   $arg->{laststatus} = shift;
+  $arg->{lastmessage} = shift;
   $arg->{lastupdate} = time;
-  return $arg->{laststatus};
+  if($arg->{laststatus} =~ /^([A-Z]+)\(([^\)]+)\)$/s) {
+    # This handles old-style modules that return just set status as
+    #     STATE(message)
+    $arg->{laststatus} = $1;
+    $arg->{lastmessage} = $2;
+  }
+  return ($arg->{laststatus}, $arg->{lastmessage});
 }
 #### Begin actual monitor functions ####
 
-register_monitor('DATE', sub {
-  my $arg = shift;
-  my $os = fresh_status($arg);
-  return set_status($arg, "OK(".time().")");
-});
+package Resmon::Modules::DATE;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
 
-register_monitor('DISK', sub {
+sub handler {
   my $arg = shift;
-  my $os = fresh_status($arg);
+  my $os = $arg->fresh_status();
+  return $arg->set_status("OK(".time().")");
+}
+
+package Resmon::Modules::DISK;
+use Resmon::ExtComm qw/cache_command/;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
+
+sub handler {
+  my $arg = shift;
+  my $os = $arg->fresh_status();
   return $os if $os;
   my $devorpart = $arg->{'object'};
   my $output = cache_command("df -k", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
   if($line =~ /(\d+)%/) {
     if($1 <= $arg->{'limit'}) {
-      return set_status($arg, "OK($1% full)");
+      return $arg->set_status("OK($1% full)");
     }
-    return set_status($arg, "BAD($1% full)");
+    return $arg->set_status("BAD($1% full)");
   }
-  return set_status($arg, "BAD(no data)");
-});
+  return $arg->set_status("BAD(no data)");
+}
 
-register_monitor('A1000', sub {
-  my $arg = shift;
-  my $os = fresh_status($arg);
-  return $os if $os;
-  my $unit = $arg->{'object'};
-  my $output = cache_command("/usr/lib/osa/bin/healthck -a", 500);
-  my ($line) = grep(/^$unit:/, split(/\n/, $output));
-  if ($line =~ /:\s+(.+)/) {
-    return set_status($arg, "OK($1)") if($1 eq $arg->{'status'});
-    return set_status($arg, "BAD($1)");
-  }
-  return set_status($arg, "BAD(no data)");
-});
+package Resmon::Modules::LOGFILE;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
 
 my %logfile_stats;
-register_monitor('LOGFILE', sub {
+sub handler {
   my $arg = shift;
-  my $os = fresh_status($arg);
+  my $os = $arg->fresh_status();
   return $os if $os;
   my $file = $arg->{'object'};
   my $match = $arg->{'match'};
   my $errors;
   my $errorcount = 0;
   my $start = 0;
-  my @statinfo = stat($filename);
+  my @statinfo = stat($file);
   if($logfile_stats{$file}) {
     my($dev, $ino, $size, $errs) = split(/-/, $logfile_stats{$file});
     if(($dev == $statinfo[0]) && ($ino == $statinfo[1])) {
       if($size == $statinfo[7]) {
-        return set_status($arg, "OK($errs)");
+        return $arg->set_status("OK($errs)");
       }
       $start = $size;
       $errorcount = $errs;
     }
   }
-  open(LOG, "<$file");
-  seek(LOG, $size, 0);
+  $logfile_stats{$file} = "$statinfo[0]-$statinfo[1]-$statinfo[7]-$errorcount";
+  if(!open(LOG, "<$file")) {
+    return $arg->set_status("BAD(ENOFILE)");
+  }
+  seek(LOG, $statinfo[7], 0);
   while(<LOG>) {
     chomp;
     if(/$match/) {
@@ -104,30 +115,38 @@ register_monitor('LOGFILE', sub {
       $errorcount++;
     }
   }
-  $logfile_stats{$file} = "$statinfo[0]-$statinfo[1]-$statinfo[7]-$errorcount";
   if($errors) {
-    return set_status($arg, "BAD($errors)");
+    return $arg->set_status("BAD($errors)");
   }
-  return set_status($arg, "OK($errorcount)");
-});
+  return $arg->set_status("OK($errorcount)");
+}
 
-register_monitor('FILEAGE', sub {
+package Resmon::Modules::FILEAGE;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
+
+sub handler {
   my $arg = shift;
-  my $os = fresh_status($arg);
+  my $os = $arg->fresh_status();
   return $os if $os;
   my $file = $arg->{'object'};
   my @statinfo = stat($file);
   my $age = time() - $statinfo[9];
-  return set_status($arg, "BAD(to old $age seconds)")
+  return $arg->set_status("BAD(to old $age seconds)")
         if($arg->{maximum} && ($age > $arg->{maximum}));
-  return set_status($arg, "BAD(to new $age seconds)")
+  return $arg->set_status("BAD(to new $age seconds)")
         if($arg->{minimum} && ($age > $arg->{minimum}));
-  return set_status($arg, "OK($age)");
-});
+  return $arg->set_status("OK($age)");
+}
 
-register_monitor('NETSTAT', sub {
+package Resmon::Modules::NETSTAT;
+use Resmon::ExtComm qw/cache_command/;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
+
+sub handler {
   my $arg = shift;
-  my $os = fresh_status($arg);
+  my $os = $arg->fresh_status();
   return $os if $os;
   my $output = cache_command("netstat -an", 30);
   my @lines = split(/\n/, $output);
@@ -139,12 +158,12 @@ register_monitor('NETSTAT', sub {
   @lines = grep(/^[\d\*\.]+\s+[\d\*\.+]\.$arg->{remoteport}/, @lines)
 	if($arg->{remoteport});
   my $count = scalar(@lines);
-  return set_status($arg, "BAD($count)")
+  return $arg->set_status("BAD($count)")
 	if($arg->{limit} && ($count > $arg->{limit}));
-  return set_status($arg, "BAD($count)")
+  return $arg->set_status("BAD($count)")
 	if($arg->{atleast} && ($count < $arg->{atleast}));
-  return set_status($arg, "OK($count)");
-});
+  return $arg->set_status("OK($count)");
+}
 
 $rmloading = "Demand loading";
 1;

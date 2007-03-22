@@ -1,18 +1,21 @@
-#!/usr/bin/perl
+package Resmon::Modules::TCPSERVICE;
 
 use Socket;
 use Fcntl;
 use IO::Select;
 use IO::Handle;
+use Resmon::Modules;
 
-register_monitor('TCPSERVICE',
-sub {
-  my $arg = shift;
-  my $os = fresh_status($arg);
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Modules/;
+
+sub handler {
+  my $self = shift;
+  my $os = $self->fresh_status();
   return $os if $os;
-  my $host = $arg->{host};
-  my $port = $arg->{port};
-  my $timeout = $arg->{timeout} || 5;
+  my $host = $self->{host};
+  my $port = $self->{port};
+  my $timeout = $self->{timeout} || 5;
   my $proto = getprotobyname('tcp');
   my $con = new IO::Select();
   my $handle = new IO::Handle;
@@ -32,21 +35,21 @@ sub {
       close($handle);
       return "BAD(connect failed)";
     }
-    print $handle $arg->{prepost}."\r\n" if ($arg->{prepost});
+    print $handle $self->{prepost}."\r\n" if ($self->{prepost});
     ($fd) = $con->can_read($timeout);
     if($fd == $handle) {
       my $banner;
       chomp($banner = <$handle>);
-      print $handle $arg->{post} if ($arg->{post});
+      print $handle $self->{post} if ($self->{post});
       close($handle);
       $banner =~ s/([^\s\d\w.,;\/\\])/sprintf "\\%o", $1/eg;
       return "BAD($banner)"
-        if($arg->{match} && ($banner =! /$arg->{match}/));
+        if($self->{match} && ($banner =! /$self->{match}/));
       return "OK($banner)";
     }
   }
   close($handle);
   return "BAD(timeout)";
-});
+}
 
 1;
