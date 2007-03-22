@@ -222,17 +222,14 @@ sub open {
   return 1;
 }
 sub store {
-  my ($self, $type, $name, $state, $mess) = @_;
-  $self->{store}->{$type}->{$name} = {
-    last_update => time,
-    state => $state,
-    message => $mess
-  };
+  my ($self, $type, $name, $info) = @_;
+  %{$self->{store}->{$type}->{$name}} = %$info;
+  $self->{store}->{$type}->{$name}->{last_update} = time;
   $self->store_shared_state();
   if($self->{handle}) {
-    $self->{handle}->print("$name($type) :: $state($mess)\n");
+    $self->{handle}->print("$name($type) :: $info->{state}($info->{message})\n");
   } else {
-    print "$name($type) :: $state($mess)\n";
+    print "$name($type) :: $info->{state}($info->{message})\n";
   }
 }
 sub close {

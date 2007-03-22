@@ -1,6 +1,11 @@
 #!/usr/bin/perl
 
-use lib '/opt/resmon/lib';
+BEGIN {
+  (my $dir = $0) =~ s/\/?[^\/]+$//;
+  print "use lib '$dir/lib';\n";
+  eval "use lib '$dir/lib';";
+  die $@ if($@);
+};
 
 use strict;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
@@ -22,7 +27,7 @@ GetOptions(
   "f=s" => \$status_file,
 );
 
-$config_file ||= 'resmon.conf';
+$config_file ||= "$0.conf";
 die "Cannot open configuration file: $config_file" unless (-r $config_file);
 
 sub configure {
@@ -67,16 +72,21 @@ while(1) {
     foreach my $monobj (@$mod_configs) {
       my $check_rv = 'BAD',
       my $check_mess = 'no data';
+      my $starttime = [gettimeofday];
       if($coderef) {
         eval { ($check_rv, $check_mess) = $coderef->($monobj); };
       } else {
         eval { ($check_rv, $check_mess) = $monobj->handler(); };
       }
+      my $results = { last_runtime_seconds => tv_interval($starttime) };
       if($@) {
-        $status->store($module_name,$monobj->{'object'},'BAD',$@);
+        $results->{state} = 'BAD';
+        $results->{message} = $@;
       } else {
-        $status->store($module_name,$monobj->{'object'},$check_rv,$check_mess);
+        $results->{state} = $check_rv;
+        $results->{message} = $check_mess;
       }
+      $status->store($module_name,$monobj->{'object'}, $results);
     }
   }
   $status->close();
