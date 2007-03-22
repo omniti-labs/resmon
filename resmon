@@ -4,9 +4,9 @@ use lib '/opt/resmon/lib';
 
 use strict;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
-use Data::Dumper;
 use POSIX qw( setsid );
 use Getopt::Long;
+use Data::Dumper;
 use vars qw($config_file $debug $status_file $config);
 
 use Resmon::Config;
@@ -28,14 +28,22 @@ sub configure {
   $config->{statusfile} = $status_file if($status_file);
   print Dumper($config) if($debug);
 }
+
+$SIG{'HUP'} = \&configure;
+configure();
+
 unless($debug) {
   fork && exit;
   setsid;
+  close(STDIN);
+  close(STDOUT);
+  close(STDERR);
+  fork && exit;
 }
-configure();
-$SIG{'HUP'} = \&configure;
 
-use Time::HiRes qw( gettimeofday tv_interval sleep );
+my $sigint = 0;
+sub sigint_handler { $sigint = 1; }
+$SIG{'INT'} = \&sigint_handler;
 
 my $rmlast = undef;
 sub wait_interval {
@@ -68,8 +76,10 @@ while(1) {
     }
   }
   $status->close();
+  die "Exiting.\n" if($sigint);
   wait_interval();
+  die "Exiting.\n" if($sigint);
   print "\n---- ".localtime(time)."----------\n"
-    unless $status->open();
+   unless $status->open();
 }
 
