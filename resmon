@@ -7,7 +7,7 @@ use Time::HiRes qw( gettimeofday tv_interval sleep );
 use POSIX qw( setsid );
 use Getopt::Long;
 use Data::Dumper;
-use vars qw($config_file $debug $status_file $config);
+use vars qw($config_file $debug $status_file $interface $port $config);
 
 use Resmon::Config;
 use Resmon::ExtComm;
@@ -15,6 +15,8 @@ use Resmon::Status;
 use Resmon::Module;
 
 GetOptions(
+  "i=s" => \$interface,
+  "p=i" => \$port,
   "c=s" => \$config_file,
   "d"   => \$debug,
   "f=s" => \$status_file,
@@ -26,20 +28,10 @@ die "Cannot open configuration file: $config_file" unless (-r $config_file);
 sub configure {
   $config = Resmon::Config->new($config_file);
   $config->{statusfile} = $status_file if($status_file);
-  print Dumper($config) if($debug);
 }
 
 $SIG{'HUP'} = \&configure;
 configure();
-
-unless($debug) {
-  fork && exit;
-  setsid;
-  close(STDIN);
-  close(STDOUT);
-  close(STDERR);
-  fork && exit;
-}
 
 my $sigint = 0;
 sub sigint_handler { $sigint = 1; }
@@ -57,6 +49,18 @@ sub wait_interval {
 
 my $list = [];
 my $status = Resmon::Status->new($config->{statusfile});
+$status->open();
+$status->serve_http_on($interface, $port) if($port);
+
+unless($debug) {
+  fork && exit;
+  setsid;
+  close(STDIN);
+  close(STDOUT);
+  close(STDERR);
+  fork && exit;
+}
+
 while(1) {
   while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
     my $coderef = Resmon::Module::fetch_monitor($module_name);
