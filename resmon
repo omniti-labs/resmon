@@ -2,7 +2,6 @@
 
 BEGIN {
   (my $dir = $0) =~ s/\/?[^\/]+$//;
-  print "use lib '$dir/lib';\n";
   eval "use lib '$dir/lib';";
   die $@ if($@);
 };
