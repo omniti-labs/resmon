@@ -51,11 +51,6 @@ sub wait_interval {
   $rmlast = [gettimeofday];
 }
 
-my $list = [];
-my $status = Resmon::Status->new($config->{statusfile});
-$status->open();
-$status->serve_http_on($interface, $port) if($port);
-
 unless($debug) {
   fork && exit;
   setsid;
@@ -64,6 +59,11 @@ unless($debug) {
   close(STDERR);
   fork && exit;
 }
+
+my $list = [];
+my $status = Resmon::Status->new($config->{statusfile});
+$status->open();
+$status->serve_http_on($interface, $port) if($port);
 
 while(1) {
   while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
