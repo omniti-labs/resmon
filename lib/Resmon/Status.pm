@@ -237,6 +237,7 @@ sub close {
   $self->{handle}->close() if($self->{handle});
   $self->{handle} = undef;
   if($self->{swap_on_close}) {
+    unlink("$self->{file}");
     link("$self->{file}.swap", $self->{file});
     unlink("$self->{file}.swap");
     delete($self->{swap_on_close});
