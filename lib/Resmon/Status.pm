@@ -96,13 +96,13 @@ sub service {
   my $state = $self->get_shared_state();
   if($req eq '/' or $req eq '/status') {
     my $response .= $self->dump_xml();
-    print $client http_header(200, $proto?length($response):0);
-    print $client $response . "\r\n";
+    $client->print(http_header(200, $proto?length($response):0));
+    $client->print($response . "\r\n");
     return;
   } elsif($req eq '/status.txt') {
     my $response = $self->dump_oldstyle();
-    print $client http_header(200, $proto?length($response):0, 'text/plain');
-    print $client $response . "\r\n";
+    $client->print(http_header(200, $proto?length($response):0, 'text/plain'));
+    $client->print($response . "\r\n");
     return;
   } else {
     if($req =~ /^\/([^\/]+)\/(.+)$/) {
@@ -113,8 +113,8 @@ sub service {
         $response .= "<ResmonResults>\n".
                      xml_info($1,$2,$info).
                      "</ResmonRestults>\n";
-        print $client http_header(200, $proto?length($response):0);
-        print $client $response . "\r\n";
+        $client->print(http_header(200, $proto?length($response):0));
+        $client->print( $response . "\r\n");
         return;
       }
     }
