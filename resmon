@@ -12,7 +12,7 @@ use vars qw($config_file $debug $status_file $config);
 use Resmon::Config;
 use Resmon::ExtComm;
 use Resmon::Status;
-use Resmon::Modules;
+use Resmon::Module;
 
 GetOptions(
   "c=s" => \$config_file,
@@ -50,8 +50,8 @@ sub wait_interval {
 my $list = [];
 my $status = Resmon::Status->new($config->{statusfile});
 while(1) {
-  while(my($module_name, $mod_configs) = each %{$config->{Modules}}) {
-    my $coderef = Resmon::Modules::fetch_monitor($module_name);
+  while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
+    my $coderef = Resmon::Module::fetch_monitor($module_name);
     foreach my $monobj (@$mod_configs) {
       my $check_rv = 'BAD',
       my $check_mess = 'no data';

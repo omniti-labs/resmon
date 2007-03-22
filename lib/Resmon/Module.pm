@@ -1,4 +1,4 @@
-package Resmon::Modules;
+package Resmon::Module;
 
 use strict;
 use Data::Dumper;
@@ -12,7 +12,7 @@ sub fetch_monitor {
   my $coderef = $coderefs{$type};
   return $coderef if ($coderef);
   eval "use $type;";
-  eval "use Resmon::Modules::$type;";
+  eval "use Resmon::Module::$type;";
   return undef;
 }
 
@@ -47,9 +47,9 @@ sub set_status {
 }
 #### Begin actual monitor functions ####
 
-package Resmon::Modules::DATE;
+package Resmon::Module::DATE;
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 sub handler {
   my $arg = shift;
@@ -57,10 +57,10 @@ sub handler {
   return $arg->set_status("OK(".time().")");
 }
 
-package Resmon::Modules::DISK;
+package Resmon::Module::DISK;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 sub handler {
   my $arg = shift;
@@ -78,9 +78,9 @@ sub handler {
   return $arg->set_status("BAD(no data)");
 }
 
-package Resmon::Modules::LOGFILE;
+package Resmon::Module::LOGFILE;
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 my %logfile_stats;
 sub handler {
@@ -121,9 +121,9 @@ sub handler {
   return $arg->set_status("OK($errorcount)");
 }
 
-package Resmon::Modules::FILEAGE;
+package Resmon::Module::FILEAGE;
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 sub handler {
   my $arg = shift;
@@ -139,10 +139,10 @@ sub handler {
   return $arg->set_status("OK($age)");
 }
 
-package Resmon::Modules::NETSTAT;
+package Resmon::Module::NETSTAT;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 sub handler {
   my $arg = shift;

@@ -23,8 +23,8 @@ sub new {
         $kvs{'object'} = $1;
 	my @params = split(/,/, $2);
 	grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S+)\s*$/ } @params;
-        my $object = bless \%kvs, "Resmon::Modules::$current";
-        push(@{$self->{Modules}->{$current}}, $object);
+        my $object = bless \%kvs, "Resmon::Module::$current";
+        push(@{$self->{Module}->{$current}}, $object);
       } elsif (/^\s*\}\s*$/) {
 	$current = undef;
       } else {
@@ -33,7 +33,7 @@ sub new {
     } else {
       if(/\s*(\S+)\s*\{/) {
 	$current = $1;
-        $self->{Modules}->{$current} = [];
+        $self->{Module}->{$current} = [];
 	next;
       }
       elsif(/\S*LIB\s+(\S+)\s*;?\s*/) {

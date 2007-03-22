@@ -1,13 +1,13 @@
-package Resmon::Modules::TCPSERVICE;
+package Resmon::Module::TCPSERVICE;
 
 use Socket;
 use Fcntl;
 use IO::Select;
 use IO::Handle;
-use Resmon::Modules;
+use Resmon::Module;
 
 use vars qw/@ISA/;
-@ISA = qw/Resmon::Modules/;
+@ISA = qw/Resmon::Module/;
 
 sub handler {
   my $self = shift;
