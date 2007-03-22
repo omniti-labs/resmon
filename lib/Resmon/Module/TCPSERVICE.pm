@@ -20,7 +20,7 @@ sub handler {
   my $con = new IO::Select();
   my $handle = new IO::Handle;
   socket($handle, Socket::PF_INET, Socket::SOCK_STREAM, $proto) ||
-    return "BAD(socket error)";
+    return "BAD", "socket error";
   $handle->autoflush(1);
   fcntl($handle, Fcntl::F_SETFL, Fcntl::O_NONBLOCK) ||
     (close($handle) && return "BAD(fcntl error)");
@@ -33,7 +33,7 @@ sub handler {
 					Socket::SO_ERROR));
     if($error != 0) {
       close($handle);
-      return "BAD(connect failed)";
+      return "BAD", "connect failed";
     }
     print $handle $self->{prepost}."\r\n" if ($self->{prepost});
     ($fd) = $con->can_read($timeout);
@@ -43,13 +43,13 @@ sub handler {
       print $handle $self->{post} if ($self->{post});
       close($handle);
       $banner =~ s/([^\s\d\w.,;\/\\])/sprintf "\\%o", $1/eg;
-      return "BAD($banner)"
+      return "BAD", "$banner"
         if($self->{match} && ($banner =! /$self->{match}/));
-      return "OK($banner)";
+      return "OK", $banner;
     }
   }
   close($handle);
-  return "BAD(timeout)";
+  return "BAD", "timeout";
 }
 
 1;
