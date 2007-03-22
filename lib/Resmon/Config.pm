@@ -36,15 +36,15 @@ sub new {
         $self->{Module}->{$current} = [];
 	next;
       }
-      elsif(/\S*LIB\s+(\S+)\s*;?\s*/) {
+      elsif(/\S*LIB\s+(\S+)\s*;\s*/) {
         eval "use lib '$1';";
         next;
       }
-      elsif(/\s*INTERVAL\s+(\d+)\s*;?\s*/) {
+      elsif(/\s*INTERVAL\s+(\d+)\s*;\s*/) {
         $self->{interval} = $1;
         next;
       }
-      elsif(/\s*STATUSFILE\s+(\S+)\s*;?\s*/) {
+      elsif(/\s*STATUSFILE\s+(\S+)\s*;\s*/) {
         $self->{statusfile} = $1;
         next;
       }

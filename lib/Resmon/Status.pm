@@ -31,8 +31,10 @@ sub get_shared_state {
   $len = unpack('i', $len);
   shmread($self->{shared_state}, $blob, length(pack('i', 0)), $len);
   # unlock
-  die "LEN: $len [$blob]\n";
-  $self->{store} = eval $blob;
+  my $VAR1;
+  eval $blob;
+  die $@ if ($@);
+  $self->{store} = $VAR1;
   return $self->{store};
 }
 sub store_shared_state {
@@ -42,29 +44,91 @@ sub store_shared_state {
 
   # Lock shared segment
   # Write state and flush
-  shmwrite($self->{shared_state}, pack("l", length($blob)),
+  shmwrite($self->{shared_state}, pack('i', length($blob)),
            0, length(pack('i', 0))) || die "$!";
   shmwrite($self->{shared_state}, $blob, length(pack('i', 0)),
-           length($blob) - length(pack('i', 0))) || die "$!";
+           length($blob)) || die "$!";
   # unlock
+}
+sub xml_info {
+  my ($module, $service, $info) = @_;
+  my $rv = '';
+  $rv .= "  <ResmonResult module=\"$module\" service=\"$service\">\n";
+  while(my ($key, $value) = each %$info) {
+    $rv .= "    <$key>$value</$key>\n";
+  }
+  $rv .= "  </ResmonResult>\n";
+  return $rv;
+}
+sub dump_generic {
+  my $self = shift;
+  my $dumper = shift;
+  my $rv = '';
+  while(my ($module, $services) = each %{$self->{store}}) {
+    while(my ($service, $info) = each %$services) {
+      $rv .= $dumper->($module,$service,$info);
+    }
+  }
+  return $rv;
+}
+sub dump_oldstyle {
+  my $self = shift;
+  my $response = $self->dump_generic(sub {
+    my($module,$service,$info) = @_;
+    return "$service($module) :: $info->{state}($info->{message})\n";
+  });
+  return $response;
+}
+sub dump_xml {
+  my $self = shift;
+  my $response = <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<ResmonResults>
+EOF
+  ; 
+  $response .= $self->dump_generic(\&xml_info);
+  $response .= "</ResmonResults>\n";
+  return $response;
 }
 sub service {
   my $self = shift;
   my ($client, $req, $proto) = @_;
   my $state = $self->get_shared_state();
-  if($req eq '/' or $req eq '/status' or $req eq '/status.txt') {
-    my $response = Dumper($self->{store});
-    print $client http_header(200, length($response)) if($proto);
+  if($req eq '/' or $req eq '/status') {
+    my $response .= $self->dump_xml();
+    print $client http_header(200, $proto?length($response):0);
     print $client $response . "\r\n";
+    return;
+  } elsif($req eq '/status.txt') {
+    my $response = $self->dump_oldstyle();
+    print $client http_header(200, $proto?length($response):0, 'text/plain');
+    print $client $response . "\r\n";
+    return;
+  } else {
+    if($req =~ /^\/([^\/]+)\/(.+)$/) {
+      if(exists($self->{store}->{$1}) &&
+         exists($self->{store}->{$1}->{$2})) {
+        my $info = $self->{store}->{$1}->{$2};
+        my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+        $response .= "<ResmonResults>\n".
+                     xml_info($1,$2,$info).
+                     "</ResmonRestults>\n";
+        print $client http_header(200, $proto?length($response):0);
+        print $client $response . "\r\n";
+        return;
+      }
+    }
   }
+  die "Request not understood\n";
 }
 sub http_header {
   my $code = shift;
   my $len = shift;
+  my $type = shift || 'text/xml';
   return qq^HTTP/1.0 $code OK
 Server: resmon
 ^ . (defined($len) ? "Content-length: $len" : "Connection: close") . q^
-Content-Type: text/plain
+Content-Type: text/plain; charset=utf-8
 
 ^;
 }
@@ -97,15 +161,10 @@ sub serve_http_on {
           eval {
             s/\r\n/\n/g;
             chomp;
-print "CLIENT <= $_\n";
             if(!$req) {
-              if(/^GET \s*(\S+) \s*HTTP\/(0\.9|1\.0|1\.1)\s*$/) {
+              if(/^GET \s*(\S+)\s*?(?: HTTP\/(0\.9|1\.0|1\.1)\s*)?$/) {
                 $req = $1;
                 $proto = $2;
-              }
-              elsif(/^GET \s*(\S+)\s*$/) {
-                $req = $1;
-                $proto = undef;
               }
               else {
                 die "protocol deviations.\n";
@@ -113,6 +172,7 @@ print "CLIENT <= $_\n";
             }
             elsif(/^$/) {
               $self->service($client, $req, $proto);
+              last unless ($proto);
               $req = undef;
               $proto = undef;
             }
@@ -124,8 +184,8 @@ print "CLIENT <= $_\n";
             }
           };
           if($@) {
-            print $client http_header(500);
-            print $client "$@";
+            print $client http_header(500, 0, 'text/plain');
+            print $client "$@\r\n";
             last;
           }
         }
