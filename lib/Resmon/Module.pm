@@ -2,7 +2,7 @@ package Resmon::Module;
 
 use strict;
 use Data::Dumper;
-
+use UNIVERSAL qw/isa/;
 my %coderefs;
 
 my $rmloading = "Registering";
@@ -11,7 +11,24 @@ sub fetch_monitor {
   my $type = shift;
   my $coderef = $coderefs{$type};
   return $coderef if ($coderef);
+
+  # First if the monitor name is raw and looks right:
+  #   is a subclass of Resmon::Module and can 'handler'
+  # then we will promote it into the Resmon::Module namespace
+  # and use this one.
   eval "use $type;";
+  if($type->isa(__PACKAGE__) && $type->can('handler')) {
+    eval " 
+      package Resmon::Module::$type;
+      use vars qw/\@ISA/;
+      \@ISA = qw($type);
+      1;
+    ";
+    if($@) {
+      die "Could not repackage $type as Resmon::Module::$type\n";
+    }
+    return undef;
+  }
   eval "use Resmon::Module::$type;";
   return undef;
 }
@@ -37,7 +54,7 @@ sub set_status {
   $arg->{laststatus} = shift;
   $arg->{lastmessage} = shift;
   $arg->{lastupdate} = time;
-  if($arg->{laststatus} =~ /^([A-Z]+)\(([^\)]+)\)$/s) {
+  if($arg->{laststatus} =~ /^([A-Z]+)\((.*)\)$/s) {
     # This handles old-style modules that return just set status as
     #     STATE(message)
     $arg->{laststatus} = $1;
