@@ -62,6 +62,17 @@ sub set_status {
   }
   return ($arg->{laststatus}, $arg->{lastmessage});
 }
+sub config_as_hash {
+  my $self = shift;
+  my $conf = {};
+  while(my ($key, $value) = each %$self) {
+    if(! ref $value) {
+      # only stash scalars here.
+      $conf->{$key} = $value;
+    }
+  }
+  return $conf;
+}
 #### Begin actual monitor functions ####
 
 package Resmon::Module::DATE;

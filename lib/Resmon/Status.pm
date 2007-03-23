@@ -50,13 +50,29 @@ sub store_shared_state {
            length($blob)) || die "$!";
   # unlock
 }
+sub xml_kv_dump {
+  my $info = shift;
+  my $indent = shift || 0;
+  my $rv = '';
+  while(my ($key, $value) = each %$info) {
+    $rv .= " " x $indent;
+    if(ref $value eq 'HASH') {
+      $rv .= "<$key>\n";
+      $rv .= xml_kv_dump($value, $indent + 2);
+      $rv .= " " x $indent;
+      $rv .= "</$key>\n";
+    }
+    else {
+      $rv .= "<$key>$value</$key>\n";
+    }
+  }
+  return $rv;
+}
 sub xml_info {
   my ($module, $service, $info) = @_;
   my $rv = '';
   $rv .= "  <ResmonResult module=\"$module\" service=\"$service\">\n";
-  while(my ($key, $value) = each %$info) {
-    $rv .= "    <$key>$value</$key>\n";
-  }
+  $rv .= xml_kv_dump($info, 4);
   $rv .= "  </ResmonResult>\n";
   return $rv;
 }

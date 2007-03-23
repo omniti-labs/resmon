@@ -77,7 +77,10 @@ while(1) {
       } else {
         eval { ($check_rv, $check_mess) = $monobj->handler(); };
       }
-      my $results = { last_runtime_seconds => tv_interval($starttime) };
+      my $results = {
+        configuration => $monobj->config_as_hash(),
+        last_runtime_seconds => tv_interval($starttime),
+      };
       if($@) {
         $results->{state} = 'BAD';
         $results->{message} = $@;
