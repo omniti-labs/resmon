@@ -32,6 +32,8 @@ die "Cannot open configuration file: $config_file" unless (-r $config_file);
 sub configure {
   $config = Resmon::Config->new($config_file);
   $config->{statusfile} = $status_file if($status_file);
+  $config->{port} = $port if($port);
+  $config->{interface} = $interface if($interface);
 }
 
 $SIG{'HUP'} = \&configure;
@@ -63,7 +65,8 @@ unless($debug) {
 my $list = [];
 my $status = Resmon::Status->new($config->{statusfile});
 $status->open();
-$status->serve_http_on($interface, $port) if($port);
+$status->serve_http_on($config->{interface}, $config->{port})
+  if($config->{port});
 
 while(1) {
   while(my($module_name, $mod_configs) = each %{$config->{Module}}) {

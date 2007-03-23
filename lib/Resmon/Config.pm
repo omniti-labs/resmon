@@ -40,6 +40,14 @@ sub new {
         eval "use lib '$1';";
         next;
       }
+      elsif(/\S*PORT\s+(\d+)\s*;\s*/) {
+        $self->{port} = $1;
+        next;
+      }
+      elsif(/\S*INTERFACE\s+(\S+)\s*;\s*/) {
+        $self->{interface} = $1;
+        next;
+      }
       elsif(/\s*INTERVAL\s+(\d+)\s*;\s*/) {
         $self->{interval} = $1;
         next;
