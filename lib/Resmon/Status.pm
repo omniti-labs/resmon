@@ -221,6 +221,7 @@ sub open {
   return 0 unless(ref $self);
   return 1 if($self->{handle});  # Alread open
   if($self->{file} eq '-' || !defined($self->{file})) {
+    $self->{handle_is_stdout} = 1;
     $self->{handle} = IO::File->new_from_fd(fileno(STDOUT), "w");
     return 1;
   }
@@ -250,6 +251,7 @@ sub store {
 }
 sub close {
   my $self = shift;
+  return if($self->{handle_is_stdout});
   $self->{handle}->close() if($self->{handle});
   $self->{handle} = undef;
   if($self->{swap_on_close}) {
