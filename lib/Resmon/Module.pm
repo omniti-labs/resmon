@@ -117,36 +117,49 @@ sub handler {
   return $os if $os;
   my $file = $arg->{'object'};
   my $match = $arg->{'match'};
-  my $errors;
-  my $errorcount = 0;
-  my $start = 0;
+  my $max = $arg->{'max'} || 8;
   my @statinfo = stat($file);
-  if($logfile_stats{$file}) {
-    my($dev, $ino, $size, $errs) = split(/-/, $logfile_stats{$file});
-    if(($dev == $statinfo[0]) && ($ino == $statinfo[1])) {
-      if($size == $statinfo[7]) {
-        return $arg->set_status("OK($errs)");
+  if(exists($arg->{file_dev})) { 
+    if(($arg->{file_dev} == $statinfo[0]) &&
+       ($arg->{file_ino} == $statinfo[1])) {
+      if($arg->{lastsize} == $statinfo[7]) {
+        if($arg->{errors}) {
+          return $arg->set_status("BAD($arg->{nerrs}: $arg->{errors})");
+        }
+        return $arg->set_status("OK(0)");
       }
-      $start = $size;
-      $errorcount = $errs;
+    } else {
+      # File is a different file now
+      $arg->{lastsize} = 0;
+      $arg->{nerrs} = 0;
+      $arg->{errors} = '';
     }
   }
-  $logfile_stats{$file} = "$statinfo[0]-$statinfo[1]-$statinfo[7]-$errorcount";
   if(!open(LOG, "<$file")) {
     return $arg->set_status("BAD(ENOFILE)");
   }
-  seek(LOG, $statinfo[7], 0);
+  seek(LOG, $arg->{lastsize}, 0);
+
   while(<LOG>) {
     chomp;
     if(/$match/) {
-      $errors .= $_;
-      $errorcount++;
+      if($arg->{nerrs} < $max) {
+        $arg->{errors} .= " " if(length($arg->{errors}));
+        $arg->{errors} .= $_;
+      }
+      $arg->{nerrs}++;
     }
   }
-  if($errors) {
-    return $arg->set_status("BAD($errors)");
+
+  # Remember where we were
+  $arg->{file_dev} = $statinfo[0];
+  $arg->{file_ino} = $statinfo[1];
+  $arg->{lastsize} = $statinfo[7];
+
+  if($arg->{nerrs}) {
+    return $arg->set_status("BAD($arg->{nerrs}: $arg->{errors})");
   }
-  return $arg->set_status("OK($errorcount)");
+  return $arg->set_status("OK(0)");
 }
 
 package Resmon::Module::FILEAGE;
