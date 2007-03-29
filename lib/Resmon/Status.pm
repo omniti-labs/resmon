@@ -11,11 +11,9 @@ use IPC::SysV qw /IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
 
 my $SEGSIZE = 1024*256;
-my $statusfile;
 sub new {
   my $class = shift;
   my $file = shift;
-  return $statusfile if($statusfile);
   return bless {
     file => $file
   }, $class;
@@ -228,7 +226,7 @@ sub open {
   $self->{handle} = IO::File->new("> $self->{file}.swap");
   die "open $self->{file}.swap failed: $!\n" unless($self->{handle});
   $self->{swap_on_close} = 1; # move this to a non .swap version on close
-  chmod 0644, "$statusfile.swap";
+  chmod 0644, "$self->{file}.swap";
 
   unless($self->{shared_state}) {
     my $id = ftok(__FILE__,$self->{http_port});
