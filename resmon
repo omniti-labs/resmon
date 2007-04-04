@@ -70,7 +70,8 @@ $status->serve_http_on($config->{interface}, $config->{port})
 
 while(1) {
   while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
-    my $coderef = Resmon::Module::fetch_monitor($module_name);
+    my $coderef = undef;
+    eval { $coderef = Resmon::Module::fetch_monitor($module_name); };
     foreach my $monobj (@$mod_configs) {
       my $check_rv = 'BAD',
       my $check_mess = 'no data';
@@ -81,7 +82,7 @@ while(1) {
         eval { ($check_rv, $check_mess) = $monobj->handler(); };
       }
       my $results = {
-        configuration => $monobj->config_as_hash(),
+        configuration => eval { $monobj->config_as_hash(); },
         last_runtime_seconds => tv_interval($starttime),
       };
       if($@) {
