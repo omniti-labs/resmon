@@ -162,8 +162,16 @@ sub serve_http_on {
     || die "bind: $!";
   listen($handle,SOMAXCONN);
 
+  $self->{zindex} = 0;
+  if (-x "/usr/sbin/zoneadm") {
+    open(Z, "/usr/sbin/zoneadm list -p |");
+    my $firstline = <Z>;
+    close(Z);
+    ($self->{zindex}) = split /:/, $firstline, 2;
+  }
   $self->{http_port} = $port;
   $self->{http_ip} = $ip;
+  $self->{ftok_number} = $port * (1 + $self->{zindex});
 
   $self->{child} = fork();
   if($self->{child} == 0) {
@@ -229,7 +237,7 @@ sub open {
   chmod 0644, "$self->{file}.swap";
 
   unless($self->{shared_state}) {
-    my $id = ftok(__FILE__,$self->{http_port});
+    my $id = ftok(__FILE__,$self->{ftok_number});
     $self->{shared_state} = shmget($id, $SEGSIZE,
                                    IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO)
       || die "$0: $!";
