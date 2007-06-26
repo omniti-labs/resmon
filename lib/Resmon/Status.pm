@@ -11,6 +11,8 @@ use IPC::SysV qw /IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
 
 my $SEGSIZE = 1024*256;
+my $KEEPALIVE_TIMEOUT = 5;
+my $REQUEST_TIMEOUT = 60;
 sub new {
   my $class = shift;
   my $file = shift;
@@ -106,16 +108,16 @@ EOF
 }
 sub service {
   my $self = shift;
-  my ($client, $req, $proto) = @_;
+  my ($client, $req, $proto, $snip) = @_;
   my $state = $self->get_shared_state();
   if($req eq '/' or $req eq '/status') {
     my $response .= $self->dump_xml();
-    $client->print(http_header(200, $proto?length($response):0));
+    $client->print(http_header(200, length($response), 'text/xml', $snip));
     $client->print($response . "\r\n");
     return;
   } elsif($req eq '/status.txt') {
     my $response = $self->dump_oldstyle();
-    $client->print(http_header(200, $proto?length($response):0, 'text/plain'));
+    $client->print(http_header(200, length($response), 'text/plain', $snip));
     $client->print($response . "\r\n");
     return;
   } else {
@@ -127,7 +129,7 @@ sub service {
         $response .= "<ResmonResults>\n".
                      xml_info($1,$2,$info).
                      "</ResmonRestults>\n";
-        $client->print(http_header(200, $proto?length($response):0));
+        $client->print(http_header(200, length($response), 'text/xml', $snip));
         $client->print( $response . "\r\n");
         return;
       }
@@ -139,10 +141,12 @@ sub http_header {
   my $code = shift;
   my $len = shift;
   my $type = shift || 'text/xml';
+  my $close_connection = shift || 1;
   return qq^HTTP/1.0 $code OK
 Server: resmon
-^ . (defined($len) ? "Content-length: $len" : "Connection: close") . q^
-Content-Type: text/plain; charset=utf-8
+^ . (defined($len) ? "Content-length: $len\n" : "") .
+    (($close_connection || !$len) ? "Connection: close\n" : "") .
+qq^Content-Type: $type; charset=utf-8
 
 ^;
 }
@@ -179,38 +183,55 @@ sub serve_http_on {
       while(my $client = $handle->accept) {
         my $req;
         my $proto;
-        while(<$client>) {
-          eval {
-            s/\r\n/\n/g;
-            chomp;
-            if(!$req) {
-              if(/^GET \s*(\S+)\s*?(?: HTTP\/(0\.9|1\.0|1\.1)\s*)?$/) {
-                $req = $1;
-                $proto = $2;
+        my $close_connection;
+        local $SIG{ALRM} = sub { die "timeout\n" };
+        eval {
+          alarm($KEEPALIVE_TIMEOUT);
+          while(<$client>) {
+            alarm($REQUEST_TIMEOUT);
+            eval {
+              s/\r\n/\n/g;
+              chomp;
+              if(!$req) {
+                if(/^GET \s*(\S+)\s*?(?: HTTP\/(0\.9|1\.0|1\.1)\s*)?$/) {
+                  $req = $1;
+                  $proto = $2;
+                  # Protocol 1.1 and high are keep-alive by default
+                  $close_connection = ($proto <= 1.0)?1:0;
+                }
+                elsif(/./) {
+                  die "protocol deviations.\n";
+                }
               }
               else {
-                die "protocol deviations.\n";
+                if(/^$/) {
+                  $self->service($client, $req, $proto, $close_connection);
+                  last if ($close_connection);
+                  alarm($KEEPALIVE_TIMEOUT);
+                  $req = undef;
+                  $proto = undef;
+                }
+                elsif(/^\S+\s*:\s*.{1,4096}$/) {
+                  # Valid request header... noop
+                  if(/^Connection: (\S+)/) {
+                    if(($proto <= 1.0 && lc($2) eq 'keep-alive') ||
+                       ($proto == 1.1 && lc($2) ne 'close')) {
+                      $close_connection = 0;
+                    }
+                  }
+                }
+                else {
+                  die "protocol deviations.\n";
+                }
               }
+            };
+            if($@) {
+              print $client http_header(500, 0, 'text/plain', 1);
+              print $client "$@\r\n";
+              last;
             }
-            elsif(/^$/) {
-              $self->service($client, $req, $proto);
-              last unless ($proto);
-              $req = undef;
-              $proto = undef;
-            }
-            elsif(/^\S+\s*:\s*.{1,4096}$/) {
-              # Valid request header... noop
-            }
-            else {
-              die "protocol deviations.\n";
-            }
-          };
-          if($@) {
-            print $client http_header(500, 0, 'text/plain');
-            print $client "$@\r\n";
-            last;
           }
-        }
+        };
         $client->close();
       }
     };
