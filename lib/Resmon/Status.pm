@@ -231,7 +231,9 @@ sub serve_http_on {
               last;
             }
           }
+          alarm(0);
         };
+        alarm(0) if($@);
         $client->close();
       }
     };
