@@ -7,7 +7,7 @@ use IO::File;
 use IO::Socket;
 use Socket;
 use Fcntl qw/:flock/;
-use IPC::SysV qw /IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
+use IPC::SysV qw /IPC_PRIVATE IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
 
 my $SEGSIZE = 1024*256;
@@ -24,7 +24,7 @@ sub get_shared_state {
   my $self = shift;
   my $blob;
   my $len;
-  return unless($self->{shared_state});
+  return unless(defined($self->{shared_state}));
   # Lock shared segment
   # Read in
   shmread($self->{shared_state}, $len, 0, length(pack('i', 0)));
@@ -39,7 +39,7 @@ sub get_shared_state {
 }
 sub store_shared_state {
   my $self = shift;
-  return unless($self->{shared_state});
+  return unless(defined($self->{shared_state}));
   my $blob = Dumper($self->{store});
 
   # Lock shared segment
@@ -259,11 +259,10 @@ sub open {
   $self->{swap_on_close} = 1; # move this to a non .swap version on close
   chmod 0644, "$self->{file}.swap";
 
-  unless($self->{shared_state}) {
-    my $id = ftok(__FILE__,$self->{ftok_number});
-    $self->{shared_state} = shmget($id, $SEGSIZE,
-                                   IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO)
-      || die "$0: $!";
+  unless(defined($self->{shared_state})) {
+    $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
+                                   IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
+    die "$0: $!" if($self->{shared_state} == -1);
   }
   return 1;
 }
@@ -299,7 +298,7 @@ sub DESTROY {
     kill 9, $child if(kill 0, $child);
     waitpid(-1,WNOHANG);
   }
-  if($self->{shared_state}) {
+  if(defined($self->{shared_state})) {
     shmctl($self->{shared_state}, IPC_RMID, 0);
   }
 }
