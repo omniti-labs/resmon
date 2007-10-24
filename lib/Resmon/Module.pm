@@ -162,6 +162,49 @@ sub handler {
   return $arg->set_status("OK(0)");
 }
 
+package Resmon::Module::FILESIZE;
+use vars qw/@ISA/;
+@ISA = qw/Resmon::Module/;
+
+sub handler {
+  my $arg = shift;
+  my $os = $arg->fresh_status();
+  return $os if $os;
+  my $file = $arg->{'object'};
+  my @statinfo = stat($file);
+  my $size = $statinfo[7];
+  my $minsize = $arg->{minimum};
+  my $maxsize = $arg->{maximum};
+  return $arg->set_status("BAD(too big, $size > $maxsize)")
+        if($maxsize && ($size > $maxsize));
+  return $arg->set_status("BAD(too small, $size < $minsize)")
+        if($minsize && ($size > $minsize));
+  return $arg->set_status("OK($size)");
+}
+
+package Resmon::Module::REMOTEFILESIZE;
+use vars qw/@ISA/;
+use Resmon::ExtComm qw/cache_command/;
+@ISA = qw/Resmon::Module/;
+
+sub handler {
+  my $arg = shift;
+  my $os = $arg->fresh_status();
+  return $os if $os;
+  my $host = $arg->{'host'};
+  my $file = $arg->{'object'};
+  my $output = cache_command("ssh -i /root/.ssh/id_dsa $host du -b $file", 600);
+  $output =~ /^(\d+)\s/; 
+  my $size = $1;
+  my $minsize = $arg->{minimum};
+  my $maxsize = $arg->{maximum};
+  return $arg->set_status("BAD(too big, $size > $maxsize)")
+        if($maxsize && ($size > $maxsize));
+  return $arg->set_status("BAD(too small, $size < $minsize)")
+        if($minsize && ($size > $minsize));
+  return $arg->set_status("OK($size)");
+}
+
 package Resmon::Module::FILEAGE;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
@@ -173,9 +216,9 @@ sub handler {
   my $file = $arg->{'object'};
   my @statinfo = stat($file);
   my $age = time() - $statinfo[9];
-  return $arg->set_status("BAD(to old $age seconds)")
+  return $arg->set_status("BAD(too old $age seconds)")
         if($arg->{maximum} && ($age > $arg->{maximum}));
-  return $arg->set_status("BAD(to new $age seconds)")
+  return $arg->set_status("BAD(too new $age seconds)")
         if($arg->{minimum} && ($age > $arg->{minimum}));
   return $arg->set_status("OK($age)");
 }
