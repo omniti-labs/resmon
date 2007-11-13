@@ -52,6 +52,7 @@ sub handler {
       my $cTime = $cs+60*($cm+60*($ch+24*$cD));
       if ($cTime<$maxlag) {
         return($arg->set_status("WARNING(check unreliable, check later)"));
+      }
       else {
         return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
       }
