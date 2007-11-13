@@ -29,7 +29,6 @@ sub handler {
     for(@ulines) {
       if (/^Last Changed Date:\s*(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}):(\d{2})/) {
         ($uY,$uM,$uD,$uh,$um,$us) = ($1,$2,$3,$4,$5,$6);
-         print;
       }
     }
     my $routput = cache_command("/opt/omni/bin/svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL\@$mr", 60);
@@ -38,7 +37,6 @@ sub handler {
     for(@rlines) {
        if (/^Last Changed Date:\s*(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}):(\d{2})/) {
          ($mY,$mM,$mD,$mh,$mm,$ms) = ($1,$2,$3,$4,$5,$6);
-         print;
        }
     }
     my ($mTime,$uTime,$lag,$maxlag);
@@ -53,7 +51,7 @@ sub handler {
       return($arg->set_status("WARNING(check unreliable, check later)"));
     }
     else {
-      return($arg->set_status("BAD(my rev:$mr, repo rev:$ur)"));
+      return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
     }
   }
 }
