@@ -47,8 +47,14 @@ sub handler {
     if ($lag <= $maxlag){
       return($arg->set_status("OK(delay = $lag < $maxlag)")); 
     }
-    elsif ($us+60*($um+60*($uh+24*($uD)))<$maxlag) {
-      return($arg->set_status("WARNING(check unreliable, check later)"));
+    elsif ($us+60*($um+60*($uh+24*$uD))<$maxlag) {
+      my ($cD,$ch,$cm,$cs) = split ( / /, `date '+%d %H %M %S'`);
+      my $cTime = $cs+60*($cm+60*($ch+24*$cD));
+      if ($cTime<$maxlag) {
+        return($arg->set_status("WARNING(check unreliable, check later)"));
+      else {
+        return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
+      }
     }
     else {
       return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
