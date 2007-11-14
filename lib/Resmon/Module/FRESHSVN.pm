@@ -21,9 +21,9 @@ sub handler {
   my @ulines = split (/\n/,$uoutput);
   my ($ur);
   for(@ulines) {
-    if (/^Revision:\s*(\d+)/) { $ur = $1; }
+    if (/^Last Changed Rev:\s*(\d+)/) { $ur = $1; }
   }
-  if($ur == $mr){ return($arg->set_status("OK(rev:$ur)")); }
+  if($ur <= $mr){ return($arg->set_status("OK(rev:$ur)")); }
   else{
     my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /, `date '+%Y %m %d %H %M %S'`);
     my $cTime=$cs+60*($cm+60*($ch+24*($cD+31*($cM+12*$cY))));
