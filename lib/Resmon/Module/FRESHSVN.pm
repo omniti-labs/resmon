@@ -25,40 +25,30 @@ sub handler {
   }
   if($ur == $mr){ return($arg->set_status("OK(rev:$ur)")); }
   else{
+    my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /, `date '+%Y %m %d %H %M %S'`);
+    my $cTime=$cs+60*($cm+60*($ch+24*($cD+31*($cM+12*$cY))));
+    my $dNow = "$cM/$cD/$cY $ch:$cm:$cs"; chomp $dNow;
     my ($uY,$uM,$uD,$uh,$um,$us);
     for(@ulines) {
       if (/^Last Changed Date:\s*(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}):(\d{2})/) {
         ($uY,$uM,$uD,$uh,$um,$us) = ($1,$2,$3,$4,$5,$6);
       }
     }
-    my $routput = cache_command("/opt/omni/bin/svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL\@$mr", 60);
-    my @rlines = split (/\n/,$routput);
-    my ($mY,$mM,$mD,$mh,$mm,$ms);
-    for(@rlines) {
-       if (/^Last Changed Date:\s*(\d{4})-(\d{1,2})-(\d{1,2}) (\d{1,2}):(\d{2}):(\d{2})/) {
-         ($mY,$mM,$mD,$mh,$mm,$ms) = ($1,$2,$3,$4,$5,$6);
-       }
-    }
-    my ($mTime,$uTime,$lag,$maxlag);
-    $mTime=$ms+60*($mm+60*($mh+24*($mD+31*($mM+12*$mY))));
-    $uTime=$us+60*($um+60*($uh+24*($uD+31*($uM+12*$uY))));
-    $lag=$uTime-$mTime;
-    $maxlag=$arg->{'maxlag'}*60 || 330;
+    my $uTime = $us+60*($um+60*($uh+24*($uD+31*($uM+12*$uY))));
+    my $dCommitted = "$uM/$uD/$uY $uh:$um:$us";
+    my $lag=$cTime-$uTime;
+    my $maxlag=$arg->{'maxlag'}*60 || 330;
     if ($lag <= $maxlag){
       return($arg->set_status("OK(delay = $lag < $maxlag)")); 
     }
-    elsif ($us+60*($um+60*($uh+24*$uD))<$maxlag) {
-      my ($cD,$ch,$cm,$cs) = split ( / /, `date '+%d %H %M %S'`);
-      my $cTime = $cs+60*($cm+60*($ch+24*$cD));
-      if ($cTime<$maxlag) {
-        return($arg->set_status("WARNING(check unreliable, check later)"));
-      }
-      else {
-        return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
-      }
+    elsif ( ( ($us+60*($um+60*($uh+24*$uD))) < $maxlag ) 
+         && ( ($cs+60*($cm+60*($ch+24*$cD))) < 2 * $maxlag )
+          )
+    {
+      return($arg->set_status("WARNING(check unreliable, check later)"));
     }
     else {
-      return($arg->set_status("BAD(my rev:$mr, repo rev:$ur, delay: $lag > $maxlag)"));
+      return($arg->set_status("BAD(now $dNow, my rev:$mr, repo rev:$ur, committed: $dCommitted)"));
     }
   }
 }
