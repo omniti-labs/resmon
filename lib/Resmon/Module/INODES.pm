@@ -1,12 +1,10 @@
-keri@ngs-va-01[/opt/resmon/lib/Resmon/Module]$ sudo svcadm refresh resmon
-keri@ngs-va-01[/opt/resmon/lib/Resmon/Module]$ more INODES.pm 
 package Resmon::Module::INODES;
 use Resmon::ExtComm qw/cache_command/;
 use Resmon::Module;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
-my $dfcmd = ($^O eq 'solaris') ? 'df -Fufs -oi' : 'df -i';
+my $dfcmd = ($^O eq 'solaris') ? 'df -Fufs -oi' : 'df -iP';
 
 sub handler {
   my $arg = shift;
