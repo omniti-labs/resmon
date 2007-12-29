@@ -90,12 +90,14 @@ use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
+my $dfcmd = ($^O eq 'linux') ? 'df -kP' : 'df -k';
+
 sub handler {
   my $arg = shift;
   my $os = $arg->fresh_status();
   return $os if $os;
   my $devorpart = $arg->{'object'};
-  my $output = cache_command("df -k", 120);
+  my $output = cache_command("$dfcmd", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
   if($line =~ /(\d+)%/) {
     if($1 <= $arg->{'limit'}) {
