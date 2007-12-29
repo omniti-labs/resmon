@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# resmon        Starts resmon.
+#
+#
+# chkconfig: 2345 99 01
+# description: resmon is a systems monitoring facility to aid nagios \
+# checks.  it should always be running when the system is in operation.
+### BEGIN INIT INFO
+# Provides: $resmon
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+[ -f /opt/resmon/resmon ] || exit 0
+[ -f /opt/resmon/resmon.conf ] || exit 0
+
+RETVAL=0
+
+umask 077
+
+start() {
+ 	echo -n $"Starting resmon: "
+	daemon /opt/resmon/resmon
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/resmon
+	return $RETVAL
+}	
+stop() {
+	echo -n $"Shutting down resmon: "
+	killproc resmon
+	echo
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/resmon
+	return $RETVAL
+}
+rhstatus() {
+	status resmon
+}
+restart() {
+	stop
+	start
+}	
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+  	stop
+	;;
+  status)
+  	rhstatus
+	;;
+  restart|reload)
+  	restart
+	;;
+  condrestart)
+  	[ -f /var/lock/subsys/resmon ] && restart || :
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+	exit 1
+esac
+
+exit $?
+
