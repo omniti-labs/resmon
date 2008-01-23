@@ -1,5 +1,6 @@
 INTERVAL 60;
-STATUSFILE /opt/thttpd/www/status.txt;
+PORT 81;
+STATUSFILE /var/run/resmon-status.txt;
 
 DATE {
   # Just adds the time, so we can check to see if it has changed
