@@ -8,7 +8,7 @@
 	type='service'
 	version='1'>
 
-	<create_default_instance enabled='true' />
+	<create_default_instance enabled='false' />
 
 	<single_instance />
 
@@ -18,7 +18,7 @@
 		restart_on='refresh'
 		type='path'>
 			<service_fmri
-				value='file://localhost/etc/resmon.conf' />
+				value='file://localhost/opt/resmon/resmon.conf' />
 	</dependency>
 
 	<dependency
@@ -32,7 +32,7 @@
 	<exec_method
 	    type='method'
 	    name='start'
-	    exec='/opt/resmon/resmon -c /etc/resmon.conf'
+	    exec='/opt/resmon/resmon -c /opt/resmon/resmon.conf'
 	    timeout_seconds='60' />
 
 	<exec_method
