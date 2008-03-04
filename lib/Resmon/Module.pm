@@ -100,10 +100,13 @@ sub handler {
   my $output = cache_command("$dfcmd", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
   if($line =~ /(\d+)%/) {
-    if($1 <= $arg->{'limit'}) {
-      return $arg->set_status("OK($1% full)");
+    if($1 > $arg->{'limit'}) {
+      return $arg->set_status("BAD($1% full)");
     }
-    return $arg->set_status("BAD($1% full)");
+    if(exists $arg->{'warnat'} && $1 > $arg->{'warnat'}) {
+      return $arg->set_status("WARNING($1% full)");
+    }
+    return $arg->set_status("OK($1% full)");
   }
   return $arg->set_status("BAD(no data)");
 }

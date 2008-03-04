@@ -27,9 +27,9 @@ A1000 {
   fd032_002				: status => Optimal
 }
 DISK {
-  /data1				: limit => 95%
-  /data2				: limit => 95%
-  /data3				: limit => 95%
+  /data1				: limit => 95%, warnat => 70%
+  /data2				: limit => 95%, warnat => 70%
+  /data3				: limit => 95%, warnat => 70%
   /data/oradata/QLP2/statspack01	: limit => 95%
   /data/oradata/QLP2/redo01		: limit => 95%
   /data/oradata/QLP2/redo03		: limit => 95%
