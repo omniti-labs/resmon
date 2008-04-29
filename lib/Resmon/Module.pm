@@ -241,7 +241,7 @@ sub handler {
   my @lines = split(/\n/, $output);
   @lines = grep(/\s$arg->{state}\s*$/, @lines) if($arg->{state});
   @lines = grep(/^$arg->{localip}/, @lines) if($arg->{localip});
-  @lines = grep(/^[\w\d\*\.]+.*[\.\:]+$arg->{localport}/, @lines) if($arg->{localport});
+  @lines = grep(/^\s*[\w\d\*\.]+.*[\.\:]+$arg->{localport}/, @lines) if($arg->{localport});
   @lines = grep(/[\d\*\.]+\d+\s+$arg->{remoteip}/, @lines)
 	if($arg->{remoteip});
   @lines = grep(/[\d\*\.]+\s+[\d\*\.]+[\.\:]+$arg->{remoteport}\s+/, @lines)
