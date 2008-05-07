@@ -7,6 +7,12 @@ use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
 # Version of the free space module that uses zpool list instead of df
+# Sample config:
+#
+# ZPOOLFREE {
+#   intmirror           : limit => 90%
+#   storage1            : limit => 90%
+# }
 
 sub handler {
   my $self = shift;
