@@ -2,14 +2,25 @@ package Resmon::Module::FRESHSVN;
 use strict;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
+use File::Find;
+
 @ISA = qw/Resmon::Module/;
 
 sub handler {
+  # Find location of subversion binary
+  my $svn = 'svn';
+  for my $path (qw(/usr/local/bin /opt/omni/bin)) {
+    if (-x "$path/svn") {
+      $svn = "$path/svn";
+      last;
+    }
+  }
+
   my $arg = shift;
   my $os = $arg->fresh_status();
   return $os if $os;
   my $dir = $arg->{'object'};
-  my $moutput = cache_command("/opt/omni/bin/svn info $dir", 60);
+  my $moutput = cache_command("$svn info $dir", 60);
   my @mlines = split (/\n/,$moutput);
   my ($URL,$mr);
   for(@mlines) {
@@ -17,7 +28,7 @@ sub handler {
     elsif (/^Revision:\s*(\d+)/) { $mr = $1; }
   }
   return ($arg->set_status("BAD(wrong URL, in conf:".$arg->{'URL'}.", checked out: $URL)")) if ($URL ne $arg->{'URL'});
-  my $uoutput = cache_command("/opt/omni/bin/svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL", 60);
+  my $uoutput = cache_command("$svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL", 60);
   my @ulines = split (/\n/,$uoutput);
   my ($ur);
   for(@ulines) {
