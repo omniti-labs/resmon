@@ -128,7 +128,7 @@ sub service {
         my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
         $response .= "<ResmonResults>\n".
                      xml_info($1,$2,$info).
-                     "</ResmonRestults>\n";
+                     "</ResmonResults>\n";
         $client->print(http_header(200, length($response), 'text/xml', $snip));
         $client->print( $response . "\r\n");
         return;
