@@ -8,7 +8,7 @@ use vars qw/@ISA/;
 # Will also notify if a zpool is degraded or not, similar to the basic zpool
 # check.
 
-# Sample config:
+# Sample configuration:
 # ZPOOLERRS {
 #   zpools : noop
 # }
