@@ -25,6 +25,19 @@ sub new {
 	grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S+)\s*$/ } @params;
         my $object = bless \%kvs, "Resmon::Module::$current";
         push(@{$self->{Module}->{$current}}, $object);
+
+        # Test to make sure the module actually works
+        my $coderef;
+        eval { $coderef = Resmon::Module::fetch_monitor($current); };
+        if (!$coderef) {
+                # Try to execute the config_as_hash method. If it fails, then
+                # the module didn't load properly (e.g. syntax error).
+                eval { $object->config_as_hash; };
+                die "Problem loading module $current" if $@;
+        } else {
+            print STDERR "moo";
+        }
+
       } elsif (/^\s*\}\s*$/) {
 	$current = undef;
       } else {

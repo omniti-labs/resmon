@@ -36,7 +36,17 @@ sub configure {
   $config->{interface} = $interface if($interface);
 }
 
-$SIG{'HUP'} = \&configure;
+sub reconfigure {
+    print STDERR "Reloading...\n";
+    eval { configure(); };
+    if ($@) {
+        print STDERR " Failed to reload: ";
+        print STDERR $@;
+        print STDERR " Continuing with old configuration\n";
+    }
+}
+
+$SIG{'HUP'} = \&reconfigure;
 configure();
 
 my $sigint = 0;
@@ -81,13 +91,14 @@ while(1) {
       } else {
         eval { ($check_rv, $check_mess) = $monobj->handler(); };
       }
+      my $checkstat = $@;
       my $results = {
         configuration => eval { $monobj->config_as_hash(); },
         last_runtime_seconds => sprintf("%.6f", tv_interval($starttime)),
       };
-      if($@) {
+      if($checkstat) {
         $results->{state} = 'BAD';
-        $results->{message} = $@;
+        $results->{message} = $checkstat;
       } else {
         $results->{state} = $check_rv;
         $results->{message} = $check_mess;
