@@ -248,6 +248,7 @@ sub service {
          exists($self->{store}->{$1}->{$2})) {
         my $info = $self->{store}->{$1}->{$2};
         my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+        my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
         $response .= "<ResmonResults>\n".
                      xml_info($1,$2,$info).
                      "</ResmonResults>\n";
