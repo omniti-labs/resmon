@@ -34,8 +34,6 @@ sub new {
                 # the module didn't load properly (e.g. syntax error).
                 eval { $object->config_as_hash; };
                 die "Problem loading module $current" if $@;
-        } else {
-            print STDERR "moo";
         }
 
       } elsif (/^\s*\}\s*$/) {
