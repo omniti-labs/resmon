@@ -17,4 +17,4 @@ sub handler {
   }
   return($arg->set_status("BAD(no output)"));
 };
-
+1;

@@ -40,4 +40,4 @@ sub handler {
       return $arg->set_status("BAD(eccmgr not running: $version)");
   }
 };
-
+1;

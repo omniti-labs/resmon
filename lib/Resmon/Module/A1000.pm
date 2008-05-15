@@ -16,4 +16,4 @@ sub handler {
   }
   return $arg->set_status("BAD(no data)");
 };
-
+1;

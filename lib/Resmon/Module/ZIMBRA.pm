@@ -16,3 +16,4 @@ sub handler {
 	}
 	return $arg->set_status("OK(All services running)");
 };
+1;

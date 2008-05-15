@@ -51,3 +51,4 @@ sub handler {
     return($arg->set_status("BAD($actives leases > $crit!)"));
   }
 };
+1;

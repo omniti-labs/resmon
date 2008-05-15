@@ -21,3 +21,4 @@ sub handler {
 	}
 	return $arg->set_status("OK(all pools are healthy)");
 };
+1;

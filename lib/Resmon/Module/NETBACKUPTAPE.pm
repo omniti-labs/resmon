@@ -24,4 +24,4 @@ sub handler {
   }
   return $arg->set_status("OK($up UP)\n");
 };
-
+1;

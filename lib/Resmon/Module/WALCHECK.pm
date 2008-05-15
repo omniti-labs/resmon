@@ -64,4 +64,4 @@ sub handler {
         return $arg->set_status( "OK(pitr replay is $tsplit[2] hours, $tsplit[1] minutes behind)");
   }
 }
-
+1;

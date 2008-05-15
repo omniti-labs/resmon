@@ -46,3 +46,4 @@ sub handler {
     }
     return "BAD", "no data"
 };
+1;

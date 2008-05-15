@@ -16,4 +16,4 @@ sub handler {
   }
   return $arg->set_status("OK(no faults)");
 };
-
+1;
