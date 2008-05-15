@@ -99,11 +99,123 @@ sub dump_xml {
   my $self = shift;
   my $response = <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>
 <ResmonResults>
 EOF
   ; 
   $response .= $self->dump_generic(\&xml_info);
   $response .= "</ResmonResults>\n";
+  return $response;
+}
+sub get_xsl() {
+  my $response = <<EOF
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:template match="ResmonResults">
+<html>
+<head>
+    <title>Resmon Results</title>
+    <link rel="stylesheet" type="text/css" href="/resmon.css" />
+</head>
+<body>
+    <xsl:for-each select="ResmonResult">
+        <div class="item">
+                <xsl:attribute name="class">
+                    item <xsl:value-of select="state" />
+                </xsl:attribute>
+            <h1>
+                <xsl:value-of select="\@module" /> -
+                <xsl:value-of select="\@service" />
+            </h1>
+            <h2>
+                <xsl:value-of select="state"/>:
+                <xsl:value-of select="message" />
+            </h2>
+            <ul>
+                <li>Time taken for last check:
+                    <xsl:value-of select="last_runtime_seconds" /></li>
+                <li>Last updated:
+                    <xsl:value-of select="last_update" /></li>
+            </ul>
+            <h2>Configuration</h2>
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                </tr>
+                <xsl:for-each select="configuration/*">
+                    <tr>
+                        <td><xsl:value-of select="name(.)" /></td>
+                        <td><xsl:value-of select="." /></td>
+                    </tr>
+                </xsl:for-each>
+            </table>
+        </div>
+    </xsl:for-each>
+</body>
+</html>
+</xsl:template>
+</xsl:stylesheet>
+EOF
+  ;
+  return $response;
+}
+sub get_css() {
+  my $response=<<EOF
+body {
+    font-family: Verdana, Arial, helvetica, sans-serif;
+}
+h1 {
+    margin: 0;
+    font-size: 120%;
+}
+
+h2 {
+    margin: 0;
+    font-sizE: 110%;
+}
+
+.item {
+    border: 1px solid black;
+    padding: 1em;
+    margin: 2em;
+    background-color: #eeeeee;
+}
+
+.OK {
+    background-color: #afa;
+}
+
+.WARNING {
+    background-color: #ffa;
+}
+
+.BAD {
+    background-color: #faa;
+}
+
+table {
+    border: 1px solid black;
+    background-color: #eeeeee;
+    border-collapse: collapse;
+    margin: 1em;
+    font-size: 80%;
+}
+
+th {
+    font-size: 100%;
+    font-weight: bold;
+    background-color: black;
+    color: white;
+}
+
+td {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+EOF
+  ;
   return $response;
 }
 sub service {
@@ -118,6 +230,16 @@ sub service {
   } elsif($req eq '/status.txt') {
     my $response = $self->dump_oldstyle();
     $client->print(http_header(200, length($response), 'text/plain', $snip));
+    $client->print($response . "\r\n");
+    return;
+  } elsif($req eq '/resmon.xsl') {
+    my $response = $self->get_xsl();
+    $client->print(http_header(200, length($response), 'text/xml', $snip));
+    $client->print($response . "\r\n");
+    return;
+  } elsif($req eq '/resmon.css') {
+    my $response = $self->get_css();
+    $client->print(http_header(200, length($response), 'text/css', $snip));
     $client->print($response . "\r\n");
     return;
   } else {
