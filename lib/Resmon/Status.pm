@@ -63,6 +63,10 @@ sub xml_kv_dump {
       $rv .= "</$key>\n";
     }
     else {
+      $value =~ s/&/&amp;/g;
+      $value =~ s/</&lt;/g;
+      $value =~ s/>/&gt;/g;
+      $value =~ s/'/&apos;/g;
       $rv .= "<$key>$value</$key>\n";
     }
   }
