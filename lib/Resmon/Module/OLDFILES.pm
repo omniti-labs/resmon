@@ -9,10 +9,12 @@ use vars qw/@ISA/;
 #   checkmount : check to make sure the directory is mounted first
 #                (only enable if the dir you are checking is the mountpoint of
 #                a filesystem)
+#   filecount : how many old files will we allow before alarming. If this is not
+#           set, then we will alarm if any files are old.
 # Example:
 #
 # OLDFILES {
-#   /test/dir : minutes => 5, checkmount => 1
+#   /test/dir : minutes => 5, filecount => 2, checkmount => 1
 #   /other/dir : minutes => 60
 # }
 
@@ -22,6 +24,7 @@ sub handler {
     return $os if $os;
     my $dir = $arg->{'object'};
     my $minutes = $arg->{'minutes'};
+    my $filecount = $arg->{'filecount'} || 0;
     my $checkmount = $arg->{'checkmount'} || 0;
 
     # Check to make sure the directory is mounted first
@@ -36,8 +39,8 @@ sub handler {
     # Then look for old files
     my $output = cache_command("find $dir -mmin +$minutes | wc -l", 600);
     chomp($output);
-    if ($output == 0) {
-        return "OK", "0 files over $minutes minutes";
+    if ($output <= $filecount) {
+        return "OK", "$output files over $minutes minutes";
     } else {
         return "BAD", "$output files over $minutes minutes";
     }
