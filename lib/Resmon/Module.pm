@@ -2,6 +2,7 @@ package Resmon::Module;
 
 use strict;
 use Data::Dumper;
+use FileHandle;
 use UNIVERSAL qw/isa/;
 my %coderefs;
 
@@ -72,6 +73,27 @@ sub config_as_hash {
     }
   }
   return $conf;
+}
+
+sub reload_module {
+    my $self = shift;
+    my $class = ref($self) || $self;
+    $class =~ s/::/\//g;
+    my $file = $INC{"$class.pm"};
+    print STDERR "Reloading module: $class\n";
+    my $fh = FileHandle->new($file);
+    local($/);
+    my $redef = 0;
+    local($SIG{__WARN__}) = sub {
+        if($_[0] =~ /[Ss]ubroutine ([\w:]+) redefined/ ) {
+            $redef++;
+            return;
+        }
+        warn @_;
+    };
+    eval <$fh>;
+    return $@ if $@;
+    return $redef;
 }
 
 $rmloading = "Demand loading";
