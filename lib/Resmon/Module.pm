@@ -81,8 +81,8 @@ sub reload_module {
     $class =~ s/::/\//g;
     my $file = $INC{"$class.pm"};
     print STDERR "Reloading module: $class\n";
-    my $fh = FileHandle->new($file);
-    local($/);
+#    my $fh = FileHandle->new($file);
+#    local($/);
     my $redef = 0;
     local($SIG{__WARN__}) = sub {
         if($_[0] =~ /[Ss]ubroutine ([\w:]+) redefined/ ) {
@@ -91,7 +91,8 @@ sub reload_module {
         }
         warn @_;
     };
-    eval <$fh>;
+#    eval <$fh>;
+    do($file);
     return $@ if $@;
     return $redef;
 }
