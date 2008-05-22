@@ -32,7 +32,7 @@ sub handler {
         }
     }
     my $output = cache_command("$svn info $resmon_dir 2>&1", 600);
-    my $revision = 0;
+    my $revision = "svn revision unknown";
     for (split(/\n/, $output)) {
         if (/^Revision:\s*(\d*)$/) { $revision = "r$1"; }
         if (/^svn: (.*) is not a working copy$/) {
