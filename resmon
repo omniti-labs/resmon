@@ -11,7 +11,7 @@ use Time::HiRes qw( gettimeofday tv_interval sleep );
 use POSIX qw( setsid );
 use Getopt::Long;
 use Data::Dumper;
-use vars qw($config_file $debug $status_file $interface $port $config);
+use vars qw($config_file $debug $status_file $interface $port $config $status);
 
 use Resmon::Config;
 use Resmon::ExtComm;
@@ -67,6 +67,7 @@ sub reconfigure {
     }
 
     $config->{'modstatus'} = $modstatus;
+    $status->purge($config);
 }
 
 $SIG{'HUP'} = \&reconfigure;
@@ -96,7 +97,7 @@ unless($debug) {
 }
 
 my $list = [];
-my $status = Resmon::Status->new($config->{statusfile});
+$status = Resmon::Status->new($config->{statusfile});
 $status->open();
 $status->serve_http_on($config->{interface}, $config->{port})
   if($config->{port});
