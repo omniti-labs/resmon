@@ -430,10 +430,10 @@ sub purge {
     while (my ($type, $value) = each (%{$self->{store}})) {
         while (my ($name, $value2) = each (%$value)) {
             if (!exists($loaded{$type}) || !exists($loaded{$type}{$name})) {
-                print STDERR "$type $name\n";
+                #print STDERR "$type $name\n";
                 delete $self->{store}->{$type}->{$name};
                 if (scalar(keys %{$self->{store}->{$type}}) == 0) {
-                    print STDERR "$type has no more objects, deleting\n";
+                    #print STDERR "$type has no more objects, deleting\n";
                     delete $self->{store}->{$type};
                 }
             }
