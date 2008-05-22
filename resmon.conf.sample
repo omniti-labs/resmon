@@ -2,9 +2,10 @@ INTERVAL 60;
 PORT 81;
 STATUSFILE /var/run/resmon-status.txt;
 
-DATE {
-  # Just adds the time, so we can check to see if it has changed
-  current_time : noop
+# Resmon health check. Shows the hostname, svn revision, and any problems with
+# modules or the configuration file.
+RESMON {
+  resmon : noop
 }
 LOGFILE {
   # Oracle alert file (look for ORA- lines)
