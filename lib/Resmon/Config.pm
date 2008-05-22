@@ -7,6 +7,7 @@ sub new {
   my $filename = shift;
   my $self = bless {
     configfile => $filename,
+    modstatus => ''
   }, $class;
   open(CONF, "<$filename") || return undef;
 
@@ -30,10 +31,16 @@ sub new {
         my $coderef;
         eval { $coderef = Resmon::Module::fetch_monitor($current); };
         if (!$coderef) {
-                # Try to execute the config_as_hash method. If it fails, then
-                # the module didn't load properly (e.g. syntax error).
-                eval { $object->config_as_hash; };
-                die "Problem loading module $current" if $@;
+            # Try to execute the config_as_hash method. If it fails, then
+            # the module didn't load properly (e.g. syntax error).
+            eval { $object->config_as_hash; };
+            if ($@) {
+                # Module failed to load, print error and add to failed
+                # modules list.
+                print STDERR "Problem loading module $current\n";
+                print STDERR "This module will not be available\n";
+                $self->{'modstatus'} .= "$current ";
+            }
         }
 
       } elsif (/^\s*\}\s*$/) {
