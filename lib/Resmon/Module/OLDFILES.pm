@@ -37,7 +37,7 @@ sub handler {
     }
 
     # Then look for old files
-    my $output = cache_command("find $dir -mmin +$minutes | wc -l", 600);
+    my $output = cache_command("find $dir -type f -mmin +$minutes | wc -l", 600);
     chomp($output);
     if ($output <= $filecount) {
         return "OK", "$output files over $minutes minutes";
