@@ -26,7 +26,7 @@ sub handler {
     if($lines[-1] =~ /^Status against revision:\s+(\d+)/) {
       $revision = $1;
     }
-    return $status, "rev:$revision";
+    return $status, "$revision";
 }
 
 1;

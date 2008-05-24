@@ -32,7 +32,7 @@ sub handler {
         my $output = cache_command("df -k", 600);
         my ($line) = grep(/$dir\s*/, split(/\n/, $output));
         if($line !~ /(\d+)%/) {
-            return "BAD", "dir not mounted";
+            return "BAD", "0 dir not mounted";
         }
     }
 
@@ -40,9 +40,9 @@ sub handler {
     my $output = cache_command("find $dir -type f -mmin +$minutes | wc -l", 600);
     chomp($output);
     if ($output <= $filecount) {
-        return "OK", "$output files over $minutes minutes";
+        return "OK", "$output files";
     } else {
-        return "BAD", "$output files over $minutes minutes";
+        return "BAD", "$output files";
     }
 }
 

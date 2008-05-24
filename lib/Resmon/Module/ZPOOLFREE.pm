@@ -30,7 +30,7 @@ sub handler {
     }
     return "OK", "$1% full";
   }
-  return "BAD", "no data";
+  return "BAD", "0 no data";
 }
 
 1;

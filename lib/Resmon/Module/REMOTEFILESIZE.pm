@@ -14,9 +14,9 @@ sub handler {
   my $size = $1;
   my $minsize = $arg->{minimum};
   my $maxsize = $arg->{maximum};
-  return $arg->set_status("BAD(too big, $size > $maxsize)")
+  return $arg->set_status("BAD($size, too big)")
         if($maxsize && ($size > $maxsize));
-  return $arg->set_status("BAD(too small, $size < $minsize)")
+  return $arg->set_status("BAD($size, too small)")
         if($minsize && ($size > $minsize));
   return $arg->set_status("OK($size)");
 }

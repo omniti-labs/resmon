@@ -31,12 +31,12 @@ sub handler {
         $total = $lines[$numLines];
         if( $total =~ /\s*$queue Queue:\s*(\d+).*/ ) {
             if( $1 > $threshold ) {
-                return "BAD", "$1 Messages $queue";
+                return "BAD", "$1 messages";
             } else {
-                return "OK", "$1 Messages $queue";
+                return "OK", "$1 messages";
             }
         } else {
-            return "OK", "no messages for domain";
+            return "OK", "0";
         }
     } else {
         my $rawOutput = cache_command(

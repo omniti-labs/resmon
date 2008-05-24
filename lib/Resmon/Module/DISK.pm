@@ -21,6 +21,6 @@ sub handler {
     }
     return $arg->set_status("OK($1% full)");
   }
-  return $arg->set_status("BAD(no data)");
+  return $arg->set_status("BAD(0 -- no data)");
 }
 1;

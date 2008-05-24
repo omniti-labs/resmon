@@ -46,9 +46,9 @@ sub handler {
   if ($actives < $warn) {
     return($arg->set_status("OK($actives leases)"));
   }elsif ($actives < $crit) {
-    return($arg->set_status("WARN($actives leases > $warn)"));
+    return($arg->set_status("WARN($actives leases)"));
   }else {
-    return($arg->set_status("BAD($actives leases > $crit!)"));
+    return($arg->set_status("BAD($actives leases)"));
   }
 };
 1;

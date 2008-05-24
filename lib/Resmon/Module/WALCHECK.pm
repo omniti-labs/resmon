@@ -54,14 +54,14 @@ sub handler {
   my @nn = localtime($now);
   my $lnow = timegm(@nn);
 
-  my $diff =  $proc - $lnow;
-  my @tsplit = splittime($diff,60,60,24,7);
+  my $diff =  $lnow - $proc;
+  my @tsplit = splittime((0 - $diff),60,60,24,7);
 
-  if ($diff < -3600)
+  if ($diff > 3600)
   {
-        return $arg->set_status( "BAD(pitr replay is $tsplit[2] hours, $tsplit[1] minutes behind)");
+        return $arg->set_status( "BAD($diff seconds behind)");
   } else {
-        return $arg->set_status( "OK(pitr replay is $tsplit[2] hours, $tsplit[1] minutes behind)");
+        return $arg->set_status( "OK($diff seconds behind)");
   }
 }
 1;

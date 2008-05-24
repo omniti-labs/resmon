@@ -9,10 +9,10 @@ sub handler {
   my $file = $arg->{'object'};
   my @statinfo = stat($file);
   my $age = time() - $statinfo[9];
-  return $arg->set_status("BAD(too old $age seconds)")
+  return $arg->set_status("BAD($age seconds, too old)")
         if($arg->{maximum} && ($age > $arg->{maximum}));
-  return $arg->set_status("BAD(too new $age seconds)")
+  return $arg->set_status("BAD($age seconds, too new)")
         if($arg->{minimum} && ($age > $arg->{minimum}));
-  return $arg->set_status("OK($age)");
+  return $arg->set_status("OK($age seconds)");
 }
 1;
