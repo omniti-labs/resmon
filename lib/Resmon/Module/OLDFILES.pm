@@ -1,6 +1,7 @@
 package Resmon::Module::OLDFILES;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
+use File::Find;
 @ISA = qw/Resmon::Module/;
 
 # Checks for files in a directory older than a certain time
@@ -18,12 +19,15 @@ use vars qw/@ISA/;
 #   /other/dir : minutes => 60
 # }
 
+my $minutes;
+my $oldcount = 0;
+
 sub handler {
     my $arg = shift;
     my $os = $arg->fresh_status();
     return $os if $os;
     my $dir = $arg->{'object'};
-    my $minutes = $arg->{'minutes'};
+    $minutes = $arg->{'minutes'};
     my $filecount = $arg->{'filecount'} || 0;
     my $checkmount = $arg->{'checkmount'} || 0;
 
@@ -37,13 +41,16 @@ sub handler {
     }
 
     # Then look for old files
-    my $output = cache_command("find $dir -type f -mmin +$minutes | wc -l", 600);
-    chomp($output);
-    if ($output <= $filecount) {
-        return "OK", "$output files";
+    find(\&wanted, $dir);
+    if ($oldcount <= $filecount) {
+        return "OK", "$oldcount files";
     } else {
-        return "BAD", "$output files";
+        return "BAD", "$oldcount files";
     }
+}
+
+sub wanted {
+    -f $_ && -M $_ > ($minutes / 1440) && $oldcount++;
 }
 
 1;
