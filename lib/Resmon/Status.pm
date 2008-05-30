@@ -307,6 +307,7 @@ sub serve_http_on {
   $self->{child} = fork();
   if($self->{child} == 0) {
     eval {
+      $SIG{'HUP'} = 'IGNORE';
       while(my $client = $handle->accept) {
         my $req;
         my $proto;

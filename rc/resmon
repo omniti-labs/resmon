@@ -43,6 +43,12 @@ restart() {
 	stop
 	start
 }	
+reload() {
+	echo -n $"Reloading resmon: "
+	killproc resmon -HUP
+	echo
+	return $?
+}
 
 case "$1" in
   start)
@@ -54,8 +60,11 @@ case "$1" in
   status)
   	rhstatus
 	;;
-  restart|reload)
+  restart)
   	restart
+	;;
+  reload)
+	reload
 	;;
   condrestart)
   	[ -f /var/lock/subsys/resmon ] && restart || :
