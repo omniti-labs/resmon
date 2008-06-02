@@ -92,7 +92,7 @@ sub reload_module {
         warn @_;
     };
 #    eval <$fh>;
-    do($file);
+    eval {do($file); die $@ if $@};
     return $@ if $@;
     return $redef;
 }
