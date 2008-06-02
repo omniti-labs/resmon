@@ -31,7 +31,7 @@ sub handler {
             last;
         }
     }
-    my $output = cache_command("$svn info $resmon_dir 2>&1", 600);
+    my $output = cache_command("$svn info $resmon_dir 2>&1", 120);
     my $revision = "svn revision unknown";
     for (split(/\n/, $output)) {
         if (/^Revision:\s*(\d*)$/) { $revision = "r$1"; }
