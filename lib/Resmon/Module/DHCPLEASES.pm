@@ -32,7 +32,7 @@ sub handler {
       }elsif (/^}/) {
         if (($starts le $date ) && ($ends ge $date)){
           $actives =+1;
-          print STDERR "ACTIVE!}", $_;
+          ## print STDERR "ACTIVE!}", $_;
         }else{
           ## print STDERR "not active}", $_;
           ## print STDERR "because today:($date)\n";
