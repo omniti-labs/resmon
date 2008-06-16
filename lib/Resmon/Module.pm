@@ -80,6 +80,12 @@ sub reload_module {
     my $class = ref($self) || $self;
     $class =~ s/::/\//g;
     my $file = $INC{"$class.pm"};
+    # Deal with modules loaded from a LIB directory and not in
+    # lib/Resmon/Module: try MODNAME.pm instead of Resmon/Module/MODNAME.pm
+    unless ($file) {
+        $class =~ s/^.*\/([^\/]+)$/\1/;
+        $file = $INC{"$class.pm"};
+    }
     print STDERR "Reloading module: $class\n";
 #    my $fh = FileHandle->new($file);
 #    local($/);
