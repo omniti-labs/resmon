@@ -25,7 +25,7 @@ sub handler {
     ## Current revision
     # Find location of subversion binary
     my $svn = 'svn';
-    for my $path (qw(/usr/local/bin /opt/omni/bin)) {
+    for my $path (qw(/usr/local/bin /opt/omni/bin /opt/csw/bin)) {
         if (-x "$path/svn") {
             $svn = "$path/svn";
             last;
