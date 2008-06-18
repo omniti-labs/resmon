@@ -34,7 +34,7 @@ sub handler {
   return $os if $os;
   my $logdir = $arg->{'logdir'};
   opendir(D, $logdir);
-  my @files = sort grep /^postgresql-[\d-]+.log$/, readdir(D);
+  my @files = sort grep /^postgresql-[\d-]+_?\d*\.log$/, readdir(D);
   closedir(D);
   my $wallog = $files[-1];
 
