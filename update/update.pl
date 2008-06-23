@@ -31,9 +31,10 @@
 
 use strict;
 use File::Find;
+use IO::Socket;
 
 my $resmondir='/opt/resmon';
-my $debug = 1;
+my $debug = 0;
 
 # Check for subversion
 my $svn;
@@ -103,41 +104,61 @@ sub reload_resmon {
 sub get_resmon_status {
     # Load resmon config file and find what port we need to connect to to
     # check if everything went OK
-    my $statusfile = 0;
+    my $port = 0;
+    my $state, my $modstatus, my $configstatus, my $message, my $revision;
+
     if (!open(CONF, "<$resmondir/resmon.conf")) {
         print STDERR "Unable to open config file";
         return 0;
     }
 
     while(<CONF>) {
-        if (/STATUSFILE\W*(.+);/) {
-            $statusfile = $1;
+        if (/PORT\W*(.+);/) {
+            $port = $1;
         }
     }
     close(CONF);
-    if (!$statusfile) {
-        print STDERR "Unable to determine the status file";
+    if (!$port) {
+        print STDERR "Unable to determine port";
         return 0;
     }
-    print "Status file is: $statusfile\n" if $debug;
+    print "Port is: $port\n" if $debug;
 
-    if (!open(STAT, "<$statusfile")) {
-        print STDERR "Unable to open status file\n";
-        return 0;
-    }
-    while(<STAT>) {
-        if (/resmon\(RESMON\) :: ([A-Z]+)/) {
-            if ("$1" eq "OK") {
-                print "Status is OK\n" if $debug;
-                return 1;
-            } else {
-                print "Status is BAD\n" if $debug;
-                return 0;
-            }
+    my $host = "127.0.0.1";
+    my $handle = IO::Socket::INET->new(Proto     => "tcp",
+                                    PeerAddr  => $host,
+                                    PeerPort  => $port)
+           or die "can't connect to port $port on $host: $!";
+
+    print $handle "GET /RESMON/resmon HTTP/1.0\n\n";
+    while(<$handle>) {
+        if (/<state>(\w+)<\/state>/) {
+            $state=$1;
+        } elsif (/<modstatus>(\w+)<\/modstatus>/) {
+            $modstatus=$1;
+        } elsif (/<configstatus>(\w+)<\/configstatus>/) {
+            $configstatus=$1;
+        } elsif (/<message>(.+)<\/message>/) {
+            $message=$1;
+        } elsif (/<revision>r(\d+)<\/revision>/) {
+            $revision=$1;
         }
     }
-    print STDERR "Unable to determine resmon status\n";
-    return 0;
+
+    print "State: $state\nModules: $modstatus\n" if $debug;
+    print "Config: $configstatus\nRevision: $revision\n" if $debug;
+    print "Message: $message\n" if $debug;
+
+    if ("$state" eq "OK") {
+        print "Status is OK\n" if $debug;
+        return 1;
+    } elsif ("$state" eq "BAD") {
+        print "Status is BAD\n" if $debug;
+        return 0;
+    } else {
+        print STDERR "Unable to determine resmon status\n";
+        return 0;
+    }
 }
 
 if ($newfiles + $changedfiles || $debug) {
