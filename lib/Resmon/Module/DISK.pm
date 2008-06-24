@@ -10,7 +10,7 @@ sub handler {
   my $os = $arg->fresh_status();
   return $os if $os;
   my $devorpart = $arg->{'object'};
-  my $output = cache_command("$dfcmd", 120);
+  my $output = cache_command("$dfcmd $devorpart", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
   if($line =~ /(\d+)%/) {
     if($1 > $arg->{'limit'}) {
