@@ -34,6 +34,10 @@ use File::Find;
 use IO::Socket;
 
 my $resmondir='/opt/resmon';
+# Debug mode. WARNING: turning this on will reload resmon on every invocation
+# regardless of whether there were any files updated or not. This is
+# incompatible with the UPDATE resmon module which will constantly reload as
+# soon as an update is found.
 my $debug = 0;
 
 # Check for subversion
@@ -47,7 +51,7 @@ foreach my $i (qw(svn /usr/bin/svn /usr/local/bin/svn /opt/omni/bin/svn)) {
 }
 if (!$svn) {
     print STDERR "Cannot find subversion. Exiting.\n";
-    exit -1;
+    exit 2;
 }
 
 # Find the last revision, in case we need to revert
@@ -127,8 +131,11 @@ sub get_resmon_status {
     my $host = "127.0.0.1";
     my $handle = IO::Socket::INET->new(Proto     => "tcp",
                                     PeerAddr  => $host,
-                                    PeerPort  => $port)
-           or die "can't connect to port $port on $host: $!";
+                                    PeerPort  => $port);
+    if (!$handle) {
+        print STDERR "can't connect to port $port on $host: $!";
+        return 0;
+    }
 
     print $handle "GET /RESMON/resmon HTTP/1.0\n\n";
     while(<$handle>) {
@@ -171,5 +178,7 @@ if ($newfiles + $changedfiles || $debug) {
         print STDERR "There is a problem with the update, reverting\n";
         `$svn update -r $last_rev $resmondir`;
         reload_resmon();
+        exit 3;
     }
+    exit 1;
 }
