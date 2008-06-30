@@ -70,7 +70,10 @@ sub reconfigure {
     $status->purge($config);
 }
 
-$SIG{'HUP'} = \&reconfigure;
+my $sighup = 0;
+sub sighup_handler { $sighup = 1; }
+$SIG{'HUP'} = \&sighup_handler;
+
 configure();
 
 my $sigint = 0;
@@ -133,6 +136,10 @@ while(1) {
     }
   }
   $status->close();
+  if ($sighup) {
+    $sighup = 0;
+    reconfigure();
+  }
   die "Exiting.\n" if($sigint);
   wait_interval();
   die "Exiting.\n" if($sigint);
