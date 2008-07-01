@@ -113,10 +113,19 @@ while(1) {
       my $check_rv = 'BAD',
       my $check_mess = 'no data';
       my $starttime = [gettimeofday];
-      if($coderef) {
-        eval { ($check_rv, $check_mess) = $coderef->($monobj); };
-      } else {
-        eval { ($check_rv, $check_mess) = $monobj->handler(); };
+      # Get old status if it hasn't expired
+      my ($check_rv, $check_mess) = Resmon::Module::fresh_status_msg($monobj);
+      # Otherwise, run the check
+      if (!$check_rv) {
+          if($coderef) {
+            eval { ($check_rv, $check_mess) = $coderef->($monobj); };
+          } else {
+            eval { ($check_rv, $check_mess) = $monobj->handler(); };
+          }
+          # Store the last status for use by fresh_status_msg later
+          # Also converts old style status messages
+          ($check_rv, $check_mess) =
+            Resmon::Module::set_status($monobj, $check_rv, $check_mess);
       }
       my $checkstat = $@;
       my $confighash = {};

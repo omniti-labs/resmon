@@ -5,8 +5,6 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $net = $arg->{'object'};
   my $file = "/var/db/dhcpd.leases";
   open (IN, '<', $file);
@@ -44,11 +42,11 @@ sub handler {
   }
   my ($warn,$crit)=($arg->{'warn'},$arg->{'crit'});
   if ($actives < $warn) {
-    return($arg->set_status("OK($actives leases)"));
+    return("OK($actives leases)");
   }elsif ($actives < $crit) {
-    return($arg->set_status("WARN($actives leases)"));
+    return("WARN($actives leases)");
   }else {
-    return($arg->set_status("BAD($actives leases)"));
+    return("BAD($actives leases)");
   }
 };
 1;

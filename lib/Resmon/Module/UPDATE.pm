@@ -13,10 +13,6 @@ sub handler {
     # Set the default interval to 10 minutes
     $arg->{interval} ||= 600;
 
-    # This code deals with the update interval
-    my $os = $arg->fresh_status();
-    return $os, $arg->{lastmessage} if $os;
-
     my $output = `/opt/resmon/update/update.pl`;
     my $exitcode = $?;
 
@@ -40,7 +36,7 @@ sub handler {
         }
     }
 
-    return $arg->set_status($status, $msg);
+    return $status, $msg;
 }
 
 1;

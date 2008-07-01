@@ -16,8 +16,6 @@ use vars qw/@ISA/;
 
 sub handler {
   my $self = shift;
-  my $os = $self->fresh_status();
-  return $os if $os;
   my $object = $self->{object};
   my $output = cache_command("zpool list", 120);
   my ($line) = grep(/$object\s*/, split(/\n/, $output));

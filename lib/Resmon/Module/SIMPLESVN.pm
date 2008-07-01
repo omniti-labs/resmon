@@ -16,8 +16,6 @@ use vars qw/@ISA/;
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
-    return $os if $os;
     my $wc = $arg->{'object'};
     my $output = cache_command("svn st -u -q $wc", 60);
     my @lines = grep { $_ !~ /^\?/ } split(/\n/, $output);

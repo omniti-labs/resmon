@@ -6,8 +6,6 @@ use vars qw/@ISA/;
 
 sub handler {
 	my $arg = shift;
-	my $os = $arg->fresh_status();
-	return $os if $os;
 	my $unit = $arg->{'object'};
 	my $output = cache_command("zpool list -H | grep -v ONLINE", 500);
 	if($output) {
@@ -17,8 +15,8 @@ sub handler {
 			$errstring .= $cols[0] . ":" . $cols[5] . " ";
 		}
 		chop($errstring);
-		return $arg->set_status("BAD($errstring)");
+		return "BAD($errstring)";
 	}
-	return $arg->set_status("OK(all pools are healthy)");
+	return "OK(all pools are healthy)";
 };
 1;

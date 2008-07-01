@@ -16,8 +16,6 @@ use Ecelerity::Control;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $proc = $arg->{'object'};
   my $socket = $arg->{'socket'} || '/tmp/2026';
   # Connect to ecelerity
@@ -29,15 +27,15 @@ sub handler {
   if ($@) {
       # Catch any could not connect error
       $@ =~ /^(.*) at/; # Fetch just the error message and no file/line no.
-      return $arg->set_status("BAD($1)");
+      return "BAD($1)";
   }
   if ($version =~ /(eccmgr version: .*)\n/) {
-      return $arg->set_status("OK($1)");
+      return "OK($1)";
   } else {
       # Something other than eccmgr responded, print out a version string
       $version =~ s/\n/ /g;
       $version =~ s/#//g;
-      return $arg->set_status("BAD(eccmgr not running: $version)");
+      return "BAD(eccmgr not running: $version)";
   }
 };
 1;

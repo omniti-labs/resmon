@@ -30,8 +30,6 @@ return @rv;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $logdir = $arg->{'logdir'};
   opendir(D, $logdir);
   my @files = sort grep /^postgresql-[\d-]+_?\d*\.log$/, readdir(D);
@@ -59,9 +57,9 @@ sub handler {
 
   if ($diff > 3600)
   {
-        return $arg->set_status( "BAD($diff seconds behind)");
+        return  "BAD($diff seconds behind)";
   } else {
-        return $arg->set_status( "OK($diff seconds behind)");
+        return  "OK($diff seconds behind)";
   }
 }
 1;

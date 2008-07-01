@@ -6,8 +6,6 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $unit = $arg->{'object'};
   my $output = cache_command("/usr/openv/volmgr/bin/vmoprcmd -d ds", 500);
   my $down = 0;
@@ -20,8 +18,8 @@ sub handler {
     }
   }
   if($down || !$up) {
-    return $arg->set_status("BAD($up UP, $down DOWN)\n");
+    return "BAD($up UP, $down DOWN)\n";
   }
-  return $arg->set_status("OK($up UP)\n");
+  return "OK($up UP)\n";
 };
 1;

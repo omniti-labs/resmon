@@ -4,8 +4,7 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $arg->set_status("OK(".time().")");
+  return "OK(".time().")";
 }
 
 1;

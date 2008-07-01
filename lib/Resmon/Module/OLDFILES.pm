@@ -24,8 +24,6 @@ my $oldcount = 0;
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
-    return $os if $os;
     my $dir = $arg->{'object'};
     $minutes = $arg->{'minutes'};
     my $filecount = $arg->{'filecount'} || 0;

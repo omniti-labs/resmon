@@ -5,8 +5,6 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $output = cache_command("netstat -an", 30);
   my @lines = split(/\n/, $output);
   @lines = grep(/\s$arg->{state}\s*$/, @lines) if($arg->{state});
@@ -17,10 +15,8 @@ sub handler {
   @lines = grep(/[\d\*\.]+\s+[\d\*\.]+[\.\:]+$arg->{remoteport}\s+/, @lines)
 	if($arg->{remoteport});
   my $count = scalar(@lines);
-  return $arg->set_status("BAD($count)")
-	if($arg->{limit} && ($count > $arg->{limit}));
-  return $arg->set_status("BAD($count)")
-	if($arg->{atleast} && ($count < $arg->{atleast}));
-  return $arg->set_status("OK($count)");
+  return "BAD($count)" if($arg->{limit} && ($count > $arg->{limit}));
+  return "BAD($count)" if($arg->{atleast} && ($count < $arg->{atleast}));
+  return "OK($count)";
 }
 1;

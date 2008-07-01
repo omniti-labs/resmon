@@ -15,8 +15,6 @@ use vars qw/@ISA/;
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
-    return $os if $os;
     my $unit = $arg->{'object'};
     my $output = cache_command(
         "zpool status -x", 600);

@@ -19,18 +19,16 @@ switch ($^O) {
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $devorpart = $arg->{'object'};
   my $output = cache_command($dfcmd, 30);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
   if($line =~ /$dfregex/) {
     if($4 <= $arg->{'limit'}) {
-      return $arg->set_status("OK($2 $4% full)");
+      return "OK($2 $4% full)";
     }
-    return $arg->set_status("BAD($2 $4% full)");
+    return "BAD($2 $4% full)";
   }
-  return $arg->set_status("BAD(no data)");
+  return "BAD(no data)";
 }
 
 1;

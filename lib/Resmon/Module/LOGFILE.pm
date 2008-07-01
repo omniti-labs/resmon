@@ -5,8 +5,6 @@ use vars qw/@ISA/;
 my %logfile_stats;
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $file = $arg->{'object'};
   my $match = $arg->{'match'};
   my $max = $arg->{'max'} || 8;
@@ -16,9 +14,9 @@ sub handler {
        ($arg->{file_ino} == $statinfo[1])) {
       if($arg->{lastsize} == $statinfo[7]) {
         if($arg->{errors}) {
-          return $arg->set_status("BAD($arg->{nerrs}: $arg->{errors})");
+          return "BAD($arg->{nerrs}: $arg->{errors})";
         }
-        return $arg->set_status("OK(0)");
+        return "OK(0)";
       }
     } else {
       # File is a different file now
@@ -28,7 +26,7 @@ sub handler {
     }
   }
   if(!open(LOG, "<$file")) {
-    return $arg->set_status("BAD(ENOFILE)");
+    return "BAD(ENOFILE)";
   }
   seek(LOG, $arg->{lastsize}, 0);
 
@@ -49,8 +47,8 @@ sub handler {
   $arg->{lastsize} = $statinfo[7];
 
   if($arg->{nerrs}) {
-    return $arg->set_status("BAD($arg->{nerrs}: $arg->{errors})");
+    return "BAD($arg->{nerrs}: $arg->{errors})";
   }
-  return $arg->set_status("OK(0)");
+  return "OK(0)";
 }
 1;

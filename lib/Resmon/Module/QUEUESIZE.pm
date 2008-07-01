@@ -12,8 +12,6 @@ my $exclude_domains = 'aol\.com|yahoo\.com|msn\.com|hotmail\.com|verizon\.net|co
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
-    return $os if $os;
 
     my $domain = $arg->{'object'};
     my $queue = $arg->{'queue'};

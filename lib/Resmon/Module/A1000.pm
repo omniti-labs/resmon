@@ -5,15 +5,13 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $unit = $arg->{'object'};
   my $output = cache_command("/usr/lib/osa/bin/healthck -a", 500);
   my ($line) = grep(/^$unit:/, split(/\n/, $output));
   if ($line =~ /:\s+(.+)/) {
-    return $arg->set_status("OK($1)") if($1 eq $arg->{'status'});
-    return $arg->set_status("BAD($1)");
+    return "OK($1)") if($1 eq $arg->{'status'};
+    return "BAD($1)";
   }
-  return $arg->set_status("BAD(no data)");
+  return "BAD(no data)";
 };
 1;

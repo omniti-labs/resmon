@@ -6,14 +6,12 @@ use vars qw/@ISA/;
 
 sub handler {
 	my $arg = shift;
-	my $os = $arg->fresh_status();
-	return $os if $os;
 	my $unit = $arg->{'object'};
 	my $output = cache_command("su - zimbra -c 'zmcontrol status' | grep 'not running'", 500);
 	if($output) {
 		$output =~s /\n/:/gs;
-		return $arg->set_status("BAD($output)");
+		return "BAD($output)";
 	}
-	return $arg->set_status("OK(All services running)");
+	return "OK(All services running)";
 };
 1;

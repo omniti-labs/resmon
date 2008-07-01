@@ -5,8 +5,6 @@ use vars qw/@ISA/;
 
 sub handler {
         my $arg = shift;
-        my $os = $arg->fresh_status();
-        return $os if $os;
         my $dir = $arg->{'object'};
         my $hlimit = $arg->{'hard_limit'};
         my $slimit = $arg->{'soft_limit'};

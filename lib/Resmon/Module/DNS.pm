@@ -10,8 +10,6 @@ use vars qw/@ISA/;
 
 sub handler {
     my $self = shift;
-    my $os = $self->fresh_status();
-    return $os if $os;
     my $object = $self->{object};
 
     my $key = "-k $self->{key}" if $self->{key};

@@ -41,15 +41,25 @@ sub register_monitor {
   }
   print STDERR "$rmloading $type monitor\n";
 }
+
 sub fresh_status {
+  my $arg = shift;
+  print STDERR $arg->{type} . ": Warning: fresh_status() is deprecated, and no longer required.";
+  return undef;
+}
+
+sub fresh_status_msg {
+  # Deal with result caching if an 'interval' entry is placed in the config
+  # for that module
   my $arg = shift;
   return undef unless $arg->{interval};
   my $now = time;
   if(($arg->{lastupdate} + $arg->{interval}) >= $now) {
-    return $arg->{laststatus};
+    return $arg->{laststatus}, $arg->{lastmessage};
   }
   return undef;
 }
+
 sub set_status {
   my $arg = shift;
   $arg->{laststatus} = shift;

@@ -11,8 +11,6 @@ use vars qw/@ISA/;
 
 sub handler {
   my $self = shift;
-  my $os = $self->fresh_status();
-  return $os if $os;
   my $host = $self->{host};
   my $port = $self->{port};
   my $timeout = $self->{timeout} || 5;

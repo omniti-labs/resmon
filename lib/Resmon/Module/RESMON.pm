@@ -15,7 +15,6 @@ $resmon_dir =~ s/\/?[^\/]+$//;
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
 
     # Get the global config object
     my $config = $main::config;
@@ -61,7 +60,7 @@ sub handler {
     $arg->{'configstatus'} = $configstatus || "OK";
     $arg->{'modstatus'} = $modstatus || "OK";
 
-    return $arg->set_status($status, "$hostname $statusmsg ($revision)");
+    return $status, "$hostname $statusmsg ($revision)";
 }
 
 1;

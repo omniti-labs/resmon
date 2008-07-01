@@ -17,8 +17,6 @@ sub handler {
   }
 
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $dir = $arg->{'object'};
   my $moutput = cache_command("$svn info $dir", 60);
   my @mlines = split (/\n/,$moutput);
@@ -27,14 +25,14 @@ sub handler {
     if (/^URL:\s*(.*)$/) { $URL=$1; }
     elsif (/^Revision:\s*(\d+)/) { $mr = $1; }
   }
-  return ($arg->set_status("BAD(wrong URL, in conf:".$arg->{'URL'}.", checked out: $URL)")) if ($URL ne $arg->{'URL'});
+  return ("BAD(wrong URL, in conf:".$arg->{'URL'}.", checked out: $URL)")) if ($URL ne $arg->{'URL'};
   my $uoutput = cache_command("$svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL", 60);
   my @ulines = split (/\n/,$uoutput);
   my ($ur);
   for(@ulines) {
     if (/^Last Changed Rev:\s*(\d+)/) { $ur = $1; }
   }
-  if($ur <= $mr){ return($arg->set_status("OK(rev:$ur)")); }
+  if($ur <= $mr){ return "OK(rev:$ur)"; }
   else{
     my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /, `date '+%Y %m %d %H %M %S'`);
     my $cTime=$cs+60*($cm+60*($ch+24*($cD+31*($cM+12*$cY))));
@@ -50,16 +48,16 @@ sub handler {
     my $lag=$cTime-$uTime;
     my $maxlag=$arg->{'maxlag'}*60 || 330;
     if ($lag <= $maxlag){
-      return($arg->set_status("OK(delay = $lag < $maxlag)")); 
+      return "OK(delay = $lag < $maxlag)";
     }
     elsif ( ( ($us+60*($um+60*($uh+24*$uD))) < $maxlag ) 
          && ( ($cs+60*($cm+60*($ch+24*$cD))) < 2 * $maxlag )
           )
     {
-      return($arg->set_status("WARNING(check unreliable, check later)"));
+      return("WARNING(check unreliable, check later)");
     }
     else {
-      return($arg->set_status("BAD(now $dNow, my rev:$mr, repo rev:$ur, committed: $dCommitted)"));
+      return("BAD(now $dNow, my rev:$mr, repo rev:$ur, committed: $dCommitted)");
     }
   }
 }

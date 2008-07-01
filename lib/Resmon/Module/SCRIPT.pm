@@ -12,15 +12,13 @@ use vars qw/@ISA/;
 
 sub handler {
     my $arg = shift;
-    my $os = $arg->fresh_status();
-    return $os if $os;
     my $object = $arg->{'object'};
     my $script = $arg->{'script'} || return "BAD", "No script specified";
     my $timeout = $arg->{'timeout'} || 30;
     my $output = cache_command("$script", $timeout);
     if ($output) {
         chomp($output);
-        return $arg->set_status($output);
+        return $output;
     } else {
         return "BAD", "No output from command";
     }

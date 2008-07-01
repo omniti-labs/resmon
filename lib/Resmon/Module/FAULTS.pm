@@ -5,15 +5,13 @@ use vars qw/@ISA/;
 
 sub handler {
   my $arg = shift;
-  my $os = $arg->fresh_status();
-  return $os if $os;
   my $proc = $arg->{'object'};
   my $output = cache_command("/usr/sbin/fmadm faulty | sed '1,2d'|grep -v -- '^----'", 500);
   if($output) {
     $output =~s /\n/:/gs;
     $output =~s /\s+/ /gs;
-    return $arg->set_status("BAD($output)");
+    return "BAD($output)";
   }
-  return $arg->set_status("OK(no faults)");
+  return "OK(no faults)";
 };
 1;
