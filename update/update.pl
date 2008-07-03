@@ -99,8 +99,10 @@ sub reload_resmon {
 
     my @procs=grep(/perl (\/opt\/resmon\/|.\/)resmon/, split(/\n/, $psout));
     foreach my $proc (@procs) {
+        $proc =~ s/^\s//;
         print "$proc\n" if $debug;
         my ($pid, $args) = split(/\W/, $proc, 2);
+        print "Killing PID:$pid\n" if $debug;
         kill('HUP', $pid);
     }
 }
@@ -175,8 +177,10 @@ if ($newfiles + $changedfiles || $debug) {
     ## Check to see if everything went OK
     sleep(3);
     if (!get_resmon_status()) {
-        print STDERR "There is a problem with the update, reverting\n";
-        `$svn update -r $last_rev $resmondir`;
+        print STDERR "There is a problem with the update, reverting to ";
+        print STDERR "revision $last_rev\n";
+        my $output = `$svn update -r $last_rev $resmondir`;
+        print $output if $debug;
         reload_resmon();
         exit 3;
     }
