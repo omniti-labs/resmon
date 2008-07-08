@@ -1,0 +1,93 @@
+#! /usr/bin/perl -w
+# Nagios script to check a resmon monitor
+#
+# Usage:
+#   check_resmon_xml_part -H host -P port -U url [-A age]
+#
+# Sample nagios command entry:
+# define command {
+#   command_name    check_resmon_xml_part
+#   command_line    $USER2$/check_resmon_xml_part -H $HOSTADDRESS$ \
+#                   -P '$ARG1$' -U '/$ARG2$/$ARG3$' -A 600
+# }
+#
+# Sample check_command entry used as part of a service definition:
+#
+# check_command check_resmon_xml_part!81!DISK!/data
+
+BEGIN {
+        if ($0 =~ m/^(.*?)[\/\\]([^\/\\]+)$/) {
+                $runtimedir = $1;
+                $PROGNAME = $2;
+        }
+}
+
+#use lib "/opt/nagios/CPAN/";
+
+use strict;
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
+use Time::HiRes qw( gettimeofday tv_interval );
+use lib $main::runtimedir;
+use XML::Simple;
+use Getopt::Long;
+
+use utils qw($TIMEOUT %ERRORS &print_revision &support);
+use vars qw($PROGNAME);
+
+my ($opt_P, $opt_H, $opt_U, $opt_A, $service);
+delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+sub help {
+    print "Usage: $0 -H hostname -P port -U url [-A age_in_seconds]\n";
+    exit $ERRORS{'UNKNOWN'};
+}
+
+Getopt::Long::Configure('bundling', 'no_ignore_case');
+GetOptions (
+    "h|help"       => \&help,
+    "H|host=s"     => \$opt_H,
+    "P|port=i"     => \$opt_P,
+    "U|url=s"      => \$opt_U,
+    "A|age=i"      => \$opt_A);
+
+
+$opt_H = shift unless ($opt_H);
+$opt_P = 81 unless($opt_P);
+$opt_U = shift unless ($opt_U);
+unless ($opt_H && $opt_P && $opt_U) {
+    help();
+}
+
+my $ua = LWP::UserAgent->new;
+my $t = HTTP::Request->new('GET', "http://$opt_H:$opt_P$opt_U");
+my $xs = XML::Simple->new();
+eval {
+  my $ref;
+  # Make the HTTP request
+  my $res = $ua->request($t);
+  die "could not fetch\n" unless($res && $res->is_success);
+  # Parse the xml
+  eval { $ref = $xs->XMLin($res->content); };
+  die "error parsing XML\n" if($@);
+  # Get the state
+  my $state = $ref->{ResmonResult}->{state};
+  # Resmon thinks it's BAD. We think it's CRITICAL
+  $state = "CRITICAL" if ($state eq "BAD");
+  # Get the message
+  my $message = $ref->{ResmonResult}->{message};
+  my $last_update = time() - $ref->{ResmonResult}->{last_update};
+  # If we have stale information, then go critical
+  if($opt_A && $opt_A < $last_update) {
+    $state = 'CRITICAL';
+    $message = "$message, status $last_update seconds old";
+  }
+  print "$state: $message\n";
+  exit $ERRORS{$state};
+};
+if($@) {
+  chomp($@);
+  print "CRITICAL($@)\n";
+  exit $ERRORS{'CRITICAL'};
+}
