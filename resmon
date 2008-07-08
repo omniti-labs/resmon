@@ -11,7 +11,8 @@ use Time::HiRes qw( gettimeofday tv_interval sleep );
 use POSIX qw( setsid );
 use Getopt::Long;
 use Data::Dumper;
-use vars qw($config_file $debug $status_file $interface $port $config $status);
+use vars qw($config_file $debug $status_file $interface $port $config
+            $status $update);
 
 use Resmon::Config;
 use Resmon::ExtComm;
@@ -24,7 +25,13 @@ GetOptions(
   "c=s" => \$config_file,
   "d"   => \$debug,
   "f=s" => \$status_file,
+  "u"   => \$update,
 );
+
+if ($update) {
+    use Resmon::Updater;
+    exit(Resmon::Updater::update($debug));
+}
 
 $config_file ||= "$0.conf";
 die "Cannot open configuration file: $config_file" unless (-r $config_file);
