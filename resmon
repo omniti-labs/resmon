@@ -30,7 +30,8 @@ GetOptions(
 
 if ($update) {
     use Resmon::Updater;
-    exit(Resmon::Updater::update($debug));
+    (my $resmondir = $0) =~ s/\/?[^\/]+$//;
+    exit(Resmon::Updater::update($debug, $resmondir));
 }
 
 $config_file ||= "$0.conf";

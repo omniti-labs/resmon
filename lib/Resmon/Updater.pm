@@ -3,15 +3,12 @@ use strict;
 use File::Find;
 use IO::Socket;
 
-# Currently hardcoded. There is probably a good way to work out what the
-# dir is from how we were called.
-my $resmondir='/opt/resmon';
-
 my $assess;
 my $newfiles;
 my $changedfiles;
 my %times;
 my $debug;
+my $resmondir;
 
 sub update {
     # Ignore a HUP, otherwise we will kill ourselves when we try to reload
@@ -22,6 +19,8 @@ sub update {
     # turning this on will reload resmon on every invocation regardless of
     # whether there were any files updated or not.
     $debug = shift;
+
+    $resmondir = shift;
 
     # Check for subversion
     my $svn;
