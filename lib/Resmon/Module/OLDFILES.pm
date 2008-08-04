@@ -28,6 +28,7 @@ sub handler {
     $minutes = $arg->{'minutes'};
     my $filecount = $arg->{'filecount'} || 0;
     my $checkmount = $arg->{'checkmount'} || 0;
+    $oldcount = 0;
 
     # Check to make sure the directory is mounted first
     if ($checkmount) {
@@ -48,7 +49,9 @@ sub handler {
 }
 
 sub wanted {
-    -f $_ && -M $_ > ($minutes / 1440) && $oldcount++;
+    my @fstat = stat($_);
+    my $lastmodified = time() - $fstat[9];
+    -f $_ && $lastmodified > ($minutes * 60) && $oldcount++;
 }
 
 1;
