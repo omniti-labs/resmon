@@ -36,7 +36,9 @@ sub handler {
 }
 
 sub wanted {
-    -f $_ && -M $_ < ($minutes / 1440) && $newcount++;
+    my @fstat = stat($_);
+    my $lastmodified = time() - $fstat[9];
+    -f $_ && $lastmodified < ($minutes * 60) && $newcount++;
 }
 
 1;
