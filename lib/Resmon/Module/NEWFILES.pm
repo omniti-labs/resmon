@@ -24,6 +24,7 @@ sub handler {
     my $dir = $arg->{'object'};
     $minutes = $arg->{'minutes'};
     my $filecount = $arg->{'filecount'} || 1;
+    $newcount = 0;
 
     # Then look for new files
     find(\&wanted, $dir);
