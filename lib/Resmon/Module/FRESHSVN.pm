@@ -32,6 +32,7 @@ sub handler {
   for(@ulines) {
     if (/^Last Changed Rev:\s*(\d+)/) { $ur = $1; }
   }
+  if(!$ur){ return "BAD(Unable to determine latest revision in repository)"; }
   if($ur <= $mr){ return "OK(rev:$ur)"; }
   else{
     my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /, `date '+%Y %m %d %H %M %S'`);
