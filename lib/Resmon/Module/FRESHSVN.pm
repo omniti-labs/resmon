@@ -25,7 +25,7 @@ sub handler {
     if (/^URL:\s*(.*)$/) { $URL=$1; }
     elsif (/^Revision:\s*(\d+)/) { $mr = $1; }
   }
-  return ("BAD(wrong URL, in conf:".$arg->{'URL'}.", checked out: $URL)")) if ($URL ne $arg->{'URL'};
+  return ("BAD(wrong URL, in conf:".$arg->{'URL'}.", checked out: $URL)") if ($URL ne $arg->{'URL'});
   my $uoutput = cache_command("$svn info --username svnsync --password Athi3izo  --no-auth-cache --non-interactive $URL", 60);
   my @ulines = split (/\n/,$uoutput);
   my ($ur);
