@@ -10,7 +10,7 @@ sub handler {
     my $limit5 = $arg->{'5m'} || "5.00";
     my $limit15 = $arg->{'15m'} || "5.00";
     my $output = cache_command("uptime", 60);
-    if($output =~ /load average: ([0-9.]+), ([0-9.]+), ([0-9.]+)/) {
+    if($output =~ /load averages?: ([0-9.]+), ([0-9.]+), ([0-9.]+)/) {
         $status = "OK";
         $sign1 = "<=";
         $sign5 = "<=";
