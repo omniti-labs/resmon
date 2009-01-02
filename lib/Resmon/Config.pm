@@ -7,7 +7,9 @@ sub new {
   my $filename = shift;
   my $self = bless {
     configfile => $filename,
-    modstatus => ''
+    modstatus => '',
+    # Defaults
+    timeout => 10
   }, $class;
   open(CONF, "<$filename") || return undef;
 
@@ -72,6 +74,10 @@ sub new {
       }
       elsif(/\s*STATUSFILE\s+(\S+)\s*;\s*/) {
         $self->{statusfile} = $1;
+        next;
+      }
+      elsif(/\s*TIMEOUT\s+(\d+)\s*;\s*/) {
+        $self->{timeout} = $1;
         next;
       }
       else {

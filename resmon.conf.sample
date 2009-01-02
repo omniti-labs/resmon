@@ -1,6 +1,7 @@
 INTERVAL 60;
 PORT 81;
 STATUSFILE /var/run/resmon-status.txt;
+TIMEOUT 10;
 
 # Resmon health check. Shows the hostname, svn revision, and any problems with
 # modules or the configuration file.
