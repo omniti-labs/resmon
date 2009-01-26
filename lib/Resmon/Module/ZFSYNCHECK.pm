@@ -14,12 +14,12 @@ sub handler {
     my $snaptime=timelocal(0,15,23,$sd,$sm-1,$sy-1900);
     my $yesterday=time-$age;
     if($yesterday < $snaptime) {
-      return "OK(snapshot $sm/$sd $sy)";
+      return "OK(snapshot is fresh $sm/$sd $sy)";
     }else{
-      return "BAD(snapshot $sm/$sd $sy)";
+      return "BAD(no fresh snapshot, recent is $sm/$sd $sy)";
     }
   }
-  return "BAD(output $output)";
+  return "BAD(unexpected output $output)";
 };
 1;
 
