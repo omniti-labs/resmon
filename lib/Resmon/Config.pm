@@ -25,7 +25,7 @@ sub new {
 	$kvs{'type'} = $current;
         $kvs{'object'} = $1;
 	my @params = split(/,/, $2);
-	grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S+)\s*$/ } @params;
+	grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S.+\S)\s*$/ } @params;
         my $object = bless \%kvs, "Resmon::Module::$current";
         push(@{$self->{Module}->{$current}}, $object);
 
