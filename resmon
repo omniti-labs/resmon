@@ -8,7 +8,7 @@ BEGIN {
 
 use strict;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
-use POSIX qw( setsid );
+use POSIX qw( setsid sys_wait_h );
 use Getopt::Long;
 use Data::Dumper;
 use vars qw($config_file $debug $status_file $interface $port $config
@@ -98,6 +98,13 @@ sub wait_interval {
   $rmlast = [gettimeofday];
 }
 
+sub reap_zombies {
+    my $kid;
+    do {
+        $kid = waitpid(-1, WNOHANG);
+    } while $kid > 0;
+}
+
 unless($debug) {
   fork && exit;
   setsid;
@@ -127,7 +134,6 @@ while(1) {
       if (!$check_rv) {
         eval {
           local $SIG{ALRM} = sub { die "alarm\n" };
-          local $SIG{CHLD} = 'IGNORE';
           alarm $config->{timeout};
           if($coderef) {
             ($check_rv, $check_mess) = $coderef->($monobj);
@@ -167,7 +173,9 @@ while(1) {
     $sighup = 0;
     reconfigure();
   } else {
+    reap_zombies();
     wait_interval();
+    reap_zombies();
   }
   die "Exiting.\n" if($sigint);
   print "\n---- ".localtime(time)."----------\n"
