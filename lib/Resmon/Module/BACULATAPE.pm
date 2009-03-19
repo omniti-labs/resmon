@@ -9,7 +9,7 @@ sub handler {
   my $os = $arg->fresh_status();
   return $os if $os;
   my $unit = $arg->{'object'};
-  my $drives_up = cache_command("echo 'st st' | /opt/bacula/sbin/bconsole | /bin/grep Device | /bin/grep -c 'is mounted'", 500);
+  my $drives_up = cache_command("echo 'status storage=$unit' | /opt/bacula/sbin/bconsole | /bin/grep Device | /bin/grep -c 'is mounted'", 500);
   chomp $drives_up;
   if($drives_up > 0) {
     return $arg->set_status("OK($drives_up UP)\n");
