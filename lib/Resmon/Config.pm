@@ -20,7 +20,7 @@ sub new {
     next if /^\s*#/;
     next if /^\s*$/;
     if($current) {
-      if(/^\s*(\S(?:.*\S)?)\s*:\s*(.+)\s*$/) {
+      if(/^\s*([^:\s](?:[^:]*[^:\s])?)\s*:\s*(.+)\s*$/) {
 	my %kvs;
 	$kvs{'type'} = $current;
         $kvs{'object'} = $1;
