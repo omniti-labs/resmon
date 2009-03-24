@@ -44,7 +44,7 @@ sub register_monitor {
 
 sub fresh_status {
   my $arg = shift;
-  print STDERR $arg->{type} . ": Warning: fresh_status() is deprecated, and no longer required.";
+  print STDERR $arg->{type} . ": Warning: fresh_status() is deprecated, and no longer required.\n";
   return undef;
 }
 
