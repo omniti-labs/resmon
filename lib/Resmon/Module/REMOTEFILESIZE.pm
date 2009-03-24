@@ -7,9 +7,9 @@ sub handler {
   my $arg = shift;
   my $host = $arg->{'host'};
   my $file = $arg->{'object'};
-  my $output = cache_command("ssh -i /root/.ssh/id_dsa $host du -b $file", 600);
+  my $output = cache_command("ssh -i /root/.ssh/id_dsa $host du -k $file", 600);
   $output =~ /^(\d+)\s/; 
-  my $size = $1;
+  my $size = $1 * 1024;
   my $minsize = $arg->{minimum};
   my $maxsize = $arg->{maximum};
   return "BAD($size, too big)"
