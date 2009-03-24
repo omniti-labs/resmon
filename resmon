@@ -134,7 +134,8 @@ while(1) {
       if (!$check_rv) {
         eval {
           local $SIG{ALRM} = sub { die "alarm\n" };
-          alarm $config->{timeout};
+          my $timeout = $monobj->{'check_timeout'} || $config->{'timeout'};
+          alarm($timeout);
           if($coderef) {
             ($check_rv, $check_mess) = $coderef->($monobj);
           } else {
