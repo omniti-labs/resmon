@@ -39,14 +39,14 @@ sub handler {
                     $currpool = $1;
                 } elsif ($line =~ /state: (.+)$/) {
                     # Pool state
-                    $errs->{$currpool} .= "$1 ";
+                    $errs{$currpool} = "$1 ";
                     if ($1 ne 'ONLINE') {
                         $status = "BAD";
                     }
                 } elsif ($line =~
                     /The pool is formatted using an older on-disk format/) {
                     # Detect if the error is just that a pool needs upgrading.
-                    $errs->{$currpool} .= "- needs upgrade ";
+                    $errs{$currpool} .= "- needs upgrade ";
                     if ($warn_on_upgrade eq "yes" && $status != "BAD") {
                         $status = "WARNING";
                     }
@@ -54,7 +54,7 @@ sub handler {
                     /([a-z0-9]+)\s+([A-Z]+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
                     # Pool errors
                     if ($3 != 0 || $4 != 0 || $5 != 0) {
-                        $errs->{$currpool} .=
+                        $errs{$currpool} .=
                             "- $1:$2 w/Errs: R:$3 W:$4 Chk:$5 ";
                         $status = "BAD";
                     }
@@ -62,7 +62,7 @@ sub handler {
             }
             # Generate the status
             my $errstring = "";
-            while (my ($k, $v) = each %$errs) {
+            while (my ($k, $v) = each %errs) {
                 # $v should always contain a trailing space
                 chop($v);
                 $errstring .= "$k: $v";
