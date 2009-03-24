@@ -8,7 +8,8 @@ sub handler {
   my $proc = $arg->{'object'};
   my $args = join(' ',$arg->{'arg0'},$arg->{'arg1'},$arg->{'arg2'});
   $args =~s/\s+$//;
-  my $output = cache_command("pgrep -f -l '$proc $args' | grep -v sh | head -1", 500);
+  $proc .= " $args" if $args;
+  my $output = cache_command("pgrep -f -l '$proc' | grep -v sh | head -1", 500);
   if($output) {
     chomp $output;
     return("OK(pid:$output)");
