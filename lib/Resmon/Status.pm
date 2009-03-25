@@ -129,8 +129,14 @@ sub get_xsl() {
                     item <xsl:value-of select="state" />
                 </xsl:attribute>
             <h1>
-                <xsl:value-of select="\@module" /> -
-                <xsl:value-of select="\@service" />
+                <a>
+                    <xsl:attribute name="href">
+                        /<xsl:value-of select="\@module"
+                            />/<xsl:value-of select="\@service" />
+                    </xsl:attribute>
+                    <xsl:value-of select="\@module" /> -
+                    <xsl:value-of select="\@service" />
+                </a>
             </h1>
             <h2>
                 <xsl:value-of select="state"/>:
@@ -217,6 +223,10 @@ th {
 td {
     padding-left: 1em;
     padding-right: 1em;
+}
+
+a {
+    text-decoration: none;
 }
 EOF
   ;
