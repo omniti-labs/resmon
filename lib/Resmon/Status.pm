@@ -131,10 +131,16 @@ sub get_xsl() {
             <h1>
                 <a>
                     <xsl:attribute name="href">
+                        /<xsl:value-of select="\@module" />
+                    </xsl:attribute>
+                    <xsl:value-of select="\@module" />
+                </a>
+                -
+                <a>
+                    <xsl:attribute name="href">
                         /<xsl:value-of select="\@module"
                             />/<xsl:value-of select="\@service" />
                     </xsl:attribute>
-                    <xsl:value-of select="\@module" /> -
                     <xsl:value-of select="\@service" />
                 </a>
             </h1>
