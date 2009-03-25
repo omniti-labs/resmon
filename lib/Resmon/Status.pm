@@ -91,6 +91,33 @@ sub dump_generic {
   }
   return $rv;
 }
+sub dump_generic_module {
+  # Dumps a single module rather than all checks
+  my $self = shift;
+  my $dumper = shift;
+  my $module = shift;
+  my $rv = '';
+  my $services = $self->{store}->{$module};
+  while(my ($service, $info) = each %$services) {
+    $rv .= $dumper->($module,$service,$info);
+  }
+  return $rv;
+}
+sub dump_generic_state {
+  # Dumps only checks with a specific state
+  my $self = shift;
+  my $dumper = shift;
+  my $state = shift;
+  my $rv = '';
+  while(my ($module, $services) = each %{$self->{store}}) {
+    while(my ($service, $info) = each %$services) {
+      if ($info->{state} eq $state) {
+        $rv .= $dumper->($module,$service,$info);
+      }
+    }
+  }
+  return $rv;
+}
 sub dump_oldstyle {
   my $self = shift;
   my $response = $self->dump_generic(sub {
@@ -262,20 +289,38 @@ sub service {
     $client->print(http_header(200, length($response), 'text/css', $snip));
     $client->print($response . "\r\n");
     return;
-  } else {
-    if($req =~ /^\/([^\/]+)\/(.+)$/) {
-      if(exists($self->{store}->{$1}) &&
-         exists($self->{store}->{$1}->{$2})) {
-        my $info = $self->{store}->{$1}->{$2};
-        my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-        my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-        $response .= "<ResmonResults>\n".
-                     xml_info($1,$2,$info).
-                     "</ResmonResults>\n";
-        $client->print(http_header(200, length($response), 'text/xml', $snip));
-        $client->print( $response . "\r\n");
-        return;
-      }
+  } elsif($req =~ /^\/([^\/]+)\/(.+)$/) {
+    if(exists($self->{store}->{$1}) &&
+        exists($self->{store}->{$1}->{$2})) {
+    my $info = $self->{store}->{$1}->{$2};
+    my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+    my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+    $response .= "<ResmonResults>\n".
+                    xml_info($1,$2,$info).
+                    "</ResmonResults>\n";
+    $client->print(http_header(200, length($response), 'text/xml', $snip));
+    $client->print( $response . "\r\n");
+    return;
+    }
+  } elsif($req =~ /^\/([^\/]+)$/) {
+    if ($1 eq "BAD" || $1 eq "OK" || $1 eq "WARNING") {
+      my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+      my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+      $response .= "<ResmonResults>\n".
+                      $self->dump_generic_state(\&xml_info,$1) .
+                      "</ResmonResults>\n";
+      $client->print(http_header(200, length($response), 'text/xml', $snip));
+      $client->print( $response . "\r\n");
+      return;
+    } elsif(exists($self->{store}->{$1})) {
+      my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+      my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+      $response .= "<ResmonResults>\n".
+                      $self->dump_generic_module(\&xml_info,$1) .
+                      "</ResmonResults>\n";
+      $client->print(http_header(200, length($response), 'text/xml', $snip));
+      $client->print( $response . "\r\n");
+      return;
     }
   }
   die "Request not understood\n";
