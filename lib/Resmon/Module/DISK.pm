@@ -10,15 +10,24 @@ sub handler {
   my $devorpart = $arg->{'object'};
   my $output = cache_command("$dfcmd $devorpart", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
-  if($line =~ /(\d+)%/) {
-    if($1 > $arg->{'limit'}) {
-      return "BAD($1% full)";
+  if($line =~ /(\d+)\s+(\d+)%/) {
+    $status = "OK";
+    # Check free space for an exact value in KB
+    if(exists $arg->{'minkbfree'} && $1 < $arg->{'minkbfree'}) {
+        $status = "BAD";
     }
-    if(exists $arg->{'warnat'} && $1 > $arg->{'warnat'}) {
-      return "WARNING($1% full)";
+    if(exists $arg->{'warnkbfree'} && $1 < $arg->{'warnkbfree'}) {
+        $status = "WARNING";
     }
-    return "OK($1% full)";
+    # Check for percentage used and alert over that value
+    if(exists $arg->{'limit'} && $2 > $arg->{'limit'}) {
+        $status = "BAD";
+    }
+    if(exists $arg->{'warnat'} && $2 > $arg->{'warnat'}) {
+        $status = "WARNING"
+    }
+    return $status, "$2% full -- $1KB free";
   }
-  return "BAD(0 -- no data)";
+  return "BAD", "0 -- no data";
 }
 1;
