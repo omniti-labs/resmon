@@ -150,6 +150,12 @@ sub get_xsl() {
     <link rel="stylesheet" type="text/css" href="/resmon.css" />
 </head>
 <body>
+    <ul class="navbar">
+        <li><a href="/">List all checks</a></li>
+        <li><a href="/BAD">List all checks that are BAD</a></li>
+        <li><a href="/WARNING">List all checks that are WARNING</a></li>
+        <li><a href="/OK">List all checks that are OK</a></li>
+    </ul>
     <xsl:for-each select="ResmonResult">
         <div class="item">
                 <xsl:attribute name="class">
@@ -260,6 +266,19 @@ td {
 
 a {
     text-decoration: none;
+}
+
+ul.navbar {
+    list-style: none;
+    font-size: 80%;
+}
+ul.navbar li {
+    display: inline;
+    padding-left: 1em;
+    padding-right: 1em;
+    margin-right: -1px;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
 }
 EOF
   ;
