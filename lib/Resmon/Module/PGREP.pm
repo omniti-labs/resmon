@@ -9,7 +9,7 @@ sub handler {
   my $args = join(' ',$arg->{'arg0'},$arg->{'arg1'},$arg->{'arg2'});
   $args =~s/\s+$//;
   $proc .= " $args" if $args;
-  my $output = cache_command("pgrep -f -l '$proc' | head -1", 500);
+  my $output = cache_command("pgrep -f -l '$proc' | head -1", 180);
   if($output) {
     chomp $output;
     return("OK(pid:$output)");
