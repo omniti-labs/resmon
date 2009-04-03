@@ -8,7 +8,7 @@ sub handler {
   my $net = $arg->{'object'};
   my $file = "/var/db/dhcpd.leases";
   open (IN, '<', $file);
-  my $date = `date +'%Y/%m/%e %H:%M:%S;'`;
+  my $date = `date -u +'%Y/%m/%d %H:%M:%S;'`;
   my ($actives,$mynet,$starts,$ends)=(0,'','');
   while (<IN>) {
     if (/^lease/) {
@@ -29,7 +29,7 @@ sub handler {
         ## print STDERR "ends:($ends)\n";
       }elsif (/^}/) {
         if (($starts le $date ) && ($ends ge $date)){
-          $actives =+1;
+          $actives +=1;
           ## print STDERR "ACTIVE!}", $_;
         }else{
           ## print STDERR "not active}", $_;
