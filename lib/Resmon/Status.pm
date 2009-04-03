@@ -161,6 +161,12 @@ sub get_xsl() {
                 <xsl:attribute name="class">
                     item <xsl:value-of select="state" />
                 </xsl:attribute>
+            <ul class="info">
+                <li>Time taken for last check:
+                    <xsl:value-of select="last_runtime_seconds" /></li>
+                <li>Last updated:
+                    <xsl:value-of select="last_update" /></li>
+            </ul>
             <h1>
                 <a>
                     <xsl:attribute name="href">
@@ -181,25 +187,21 @@ sub get_xsl() {
                 <xsl:value-of select="state"/>:
                 <xsl:value-of select="message" />
             </h2>
-            <ul>
-                <li>Time taken for last check:
-                    <xsl:value-of select="last_runtime_seconds" /></li>
-                <li>Last updated:
-                    <xsl:value-of select="last_update" /></li>
-            </ul>
-            <h2>Configuration</h2>
-            <table>
-                <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                </tr>
-                <xsl:for-each select="configuration/*">
+            <a class="config" href="#">
+                Hover to view configuration...
+                <table>
                     <tr>
-                        <td><xsl:value-of select="name(.)" /></td>
-                        <td><xsl:value-of select="." /></td>
+                        <th>Name</th>
+                        <th>Value</th>
                     </tr>
-                </xsl:for-each>
-            </table>
+                    <xsl:for-each select="configuration/*">
+                        <tr>
+                            <td><xsl:value-of select="name(.)" /></td>
+                            <td><xsl:value-of select="." /></td>
+                        </tr>
+                    </xsl:for-each>
+                </table>
+            </a>
         </div>
     </xsl:for-each>
 </body>
@@ -230,6 +232,33 @@ h2 {
     padding: 1em;
     margin: 2em;
     background-color: #eeeeee;
+}
+
+a.config {
+    color: black;
+}
+
+a.config:visited {
+    color: black;
+}
+
+a.config table {
+    display: none
+}
+
+a.config:hover table {
+    /*display: table;*/
+    display: block;
+    position: fixed;
+    top: 1em;
+    right: 1em;
+}
+
+.info {
+    float: right;
+    font-size: 80%;
+    padding: 0;
+    margin: 0;
 }
 
 .OK {
