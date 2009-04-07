@@ -157,6 +157,8 @@ sub get_xsl() {
         <li><a href="/OK">List all checks that are OK</a></li>
     </ul>
     <xsl:for-each select="ResmonResult">
+        <xsl:sort select="\@module" />
+        <xsl:sort select="\@service" />
         <div class="item">
                 <xsl:attribute name="class">
                     item <xsl:value-of select="state" />
@@ -195,6 +197,7 @@ sub get_xsl() {
                         <th>Value</th>
                     </tr>
                     <xsl:for-each select="configuration/*">
+                        <xsl:sort select="name(.)" />
                         <tr>
                             <td><xsl:value-of select="name(.)" /></td>
                             <td><xsl:value-of select="." /></td>
