@@ -247,11 +247,12 @@ a.config table {
 }
 
 a.config:hover table {
-    /*display: table;*/
     display: block;
     position: fixed;
     top: 1em;
     right: 1em;
+    max-width: 95%;
+    overflow: hidden;
 }
 
 .info {
