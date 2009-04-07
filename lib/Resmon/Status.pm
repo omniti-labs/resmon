@@ -156,6 +156,10 @@ sub get_xsl() {
         <li><a href="/WARNING">List all checks that are WARNING</a></li>
         <li><a href="/OK">List all checks that are OK</a></li>
     </ul>
+    <p>
+    Total checks:
+    <xsl:value-of select="count(ResmonResult)" />
+    </p>
     <xsl:for-each select="ResmonResult">
         <xsl:sort select="\@module" />
         <xsl:sort select="\@service" />
