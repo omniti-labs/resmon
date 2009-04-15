@@ -53,7 +53,7 @@ sub handler {
   my $status;
   if($percent > $self->{'limit'}) {
     $status = "BAD";
-  } elsif(exists $self->{'warnat'} && $1 > $self->{'warnat'}) {
+  } elsif(exists $self->{'warnat'} && $percent > $self->{'warnat'}) {
     $status = "WARNING";
   } else {
     $status = "OK";
