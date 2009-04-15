@@ -8,7 +8,7 @@ BEGIN {
 
 use strict;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
-use POSIX qw( setsid sys_wait_h );
+use POSIX qw( :sys_wait_h setsid );
 use Getopt::Long;
 use Data::Dumper;
 use vars qw($config_file $debug $status_file $interface $port $config
