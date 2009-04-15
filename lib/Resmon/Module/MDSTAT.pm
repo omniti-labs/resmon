@@ -10,25 +10,35 @@ sub handler {
     my $arg = shift;
     open FH, "<$statfile";
     my $getnext = 0;
-    my $status = "BAD";
+    my $status = "OK";
+    my @message = ();
     while (<FH>) {
         chomp;
-        if ($getnext == 1) {
-            print STDERR $_;
-            $getnext = 0;
-        } elsif (/^md[0-9]+\s*:\s+/) {
+        if (/^(md[0-9]+)\s*:\s+/) {
+            my $array = $1;
+            my $messageline = "$array ";
+            my @baddevs = ();
             foreach my $part (split(/ /,$')) {
-                if ($part =~ /active/) {
-                    $status = "OK";
-                }
-                # TODO - degraded etc.
-                elsif ($part =~ /^([a-z0-9]+)\[(\d+)\](?:\((\S+)\))?$/) {
-                    # We have a drive status
-                    print STDERR "status: $1 $2 $3\n";
+                if ($part eq "active") {
+                    $messageline .= "active ";
+                } elsif ($part eq "inactive") {
+                    $status = "BAD";
+                    $messageline .= "inactive ";
+                } elsif ($part =~ /^([a-z0-9]+)\[(\d+)\](?:\((\S+)\))?$/) {
+                    if ($3 eq "F") {
+                        $status = "BAD";
+                        push @baddevs, $1;
+                    }
                 }
             }
-            $getnext = 1;
+            chop $messageline;
+            if (@baddevs) {
+                $messageline = "$messageline - " . join(', ', @baddevs) .
+                    " faulted";
+            }
+            push @message, $messageline;
         }
     }
+    return $status, join('; ', @message);
 };
 1;
