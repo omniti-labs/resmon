@@ -425,6 +425,7 @@ sub serve_http_on {
   if($self->{child} == 0) {
     eval {
       $SIG{'HUP'} = 'IGNORE';
+      $SIG{'PIPE'} = 'IGNORE';
       while(my $client = $handle->accept) {
         my $req;
         my $proto;
