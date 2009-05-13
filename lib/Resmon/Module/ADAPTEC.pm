@@ -22,18 +22,18 @@ sub handler {
     # Unit number
     my $unit = $arg->{'object'};
     # Path to arcconf program
-    my $arcconf = $arg->{'arcconf'} || '/use/StorMan/arcconf';
+    my $arcconf = $arg->{'arcconf'} || '/usr/StorMan/arcconf';
 
-    my $status = "OK";
-    my $message;
+    my $status = "BAD";
+    my $message = "No output";
 
     my $output = cache_command("$arcconf getconfig $unit AD", 500);
     foreach (split(/\n/, $output)) {
         if (/Logical devices\/Failed\/Degraded\s+:\s+\d+\/(\d+)\/(\d+)/) {
             my $failed = $1;
             my $degraded = $2;
-            if ($failed > 0 || $degraded > 0) {
-                $status = "BAD";
+            if ($failed == 0 || $degraded == 0) {
+                $status = "OK";
             }
             $message = "$failed Failed, $degraded Degraded";
             last;
