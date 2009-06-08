@@ -132,17 +132,17 @@ while(1) {
       my ($check_rv, $check_mess) = Resmon::Module::fresh_status_msg($monobj);
       # Otherwise, run the check
       if (!$check_rv) {
+        local $SIG{ALRM} = sub { die "alarm\n" };
+        my $timeout = $monobj->{'check_timeout'} || $config->{'timeout'};
+        alarm($timeout);
         eval {
-          local $SIG{ALRM} = sub { die "alarm\n" };
-          my $timeout = $monobj->{'check_timeout'} || $config->{'timeout'};
-          alarm($timeout);
           if($coderef) {
             ($check_rv, $check_mess) = $coderef->($monobj);
           } else {
             ($check_rv, $check_mess) = $monobj->handler();
           }
-          alarm 0;
         };
+        alarm 0;
         # Store the last status for use by fresh_status_msg later
         # Also converts old style status messages
         ($check_rv, $check_mess) =
