@@ -33,7 +33,6 @@ sub handler {
 	
 	$dbh->disconnect;
 
-	system("touch /tmp/foo");
 	return $status, "$count job(s) in the last 24 hours";
 }
 
