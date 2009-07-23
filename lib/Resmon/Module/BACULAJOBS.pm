@@ -3,7 +3,7 @@ use Resmon::Module;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
-use lib qw(/www/CPAN/lib/site_perl);
+use lib qw(/www/CPAN/lib/site_perl /opt/CPAN/lib/site_perl);
 use DBI;
 use DBD::Pg;
 
