@@ -11,12 +11,13 @@ my $DEBUG=0;
 sub handler {
   my $arg = shift; 
   my ($sensor,$chip)=split('@', $arg->{'object'});
-  ## print STDERR "sensor=$sensor; chip=$chip\n" if $DEBUG>1;
+  print STDERR "sensor=$sensor; chip=$chip\n" if $DEBUG;
+  $sensor =~s/\+/ /g;
   my $warning = $arg->{'warning'};
   my $critical = $arg->{'critical'};
   $warning = $critical if not $warning;
   my $output = cache_command("/usr/bin/sensors $chip", 30);
-  ## print STDERR $output if $DEBUG>1;
+  print STDERR $output if $DEBUG;
   my @lines = split(/\n/, $output);
   my ($temp,$continues);
   for my $line (@lines) {
