@@ -40,8 +40,8 @@ sub handler {
     }
 	## print "case 5 continues=$continues  and line $line\n" if $DEBUG>1;
   }
-  return "OK($temp $sensor($chip))" if ($temp && ($temp<$warning));
-  return "WARNING($temp $sensor($chip))" if ($temp && ($temp<$critical));
-  return "BAD($temp $sensor($chip))";
+  return "OK($temp $sensor\@$chip)" if ($temp && ($temp<$warning));
+  return "WARNING($temp $sensor\@$chip)" if ($temp && ($temp<$critical));
+  return "BAD($temp $sensor@$chip)";
 };
 1;
