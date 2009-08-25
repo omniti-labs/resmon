@@ -1,4 +1,4 @@
-package Resmon::Module::SPARKTEMP;
+package Resmon::Module::SPARCTEMP;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
