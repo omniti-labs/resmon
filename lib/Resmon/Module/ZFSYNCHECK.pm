@@ -1,25 +1,23 @@
 package Resmon::Module::ZFSYNCHECK;
+use strict;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 use Time::Local;
-use Time::Local;($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time-84600); print "$mon/$mday/$year";
 @ISA = qw/Resmon::Module/;
-my $arg=shift;
-my $zfs=$arg->{'object'};
-my $age=$arg->{'age'}*86400+43200;
 sub handler {
-  my $output = cache_command("zfs list -t snapshot -s creation | grep $zfs | tail -1", 300);
-  if ($output =~ m!$zfs.%?([0-9]{4,4})([0-9]{2,2})([0-9]{2,2})!){
-    my ($sy,$sm,$sd)=($1,$2,$3);
-    my $snaptime=timelocal(0,15,23,$sd,$sm-1,$sy-1900);
-    my $yesterday=time-$age;
-    if($yesterday < $snaptime) {
-      return "OK(snapshot is fresh $sm/$sd $sy)";
-    }else{
-      return "BAD(no fresh snapshot, recent is $sm/$sd $sy)";
-    }
+  my $arg=shift;
+  my $zfs=$arg->{'object'};
+  my $age=$arg->{'age'}*86400;
+  my $recentsnap = cache_command("zfs list -tsnapshot -H -Screation -oname| grep '^$zfs\@' | head -1", 300);
+  return "BAD(no snapshot of $zfs)" if not $recentsnap;
+  my $snaptime = cache_command("zfs get -H -p -ovalue creation $recentsnap", 300);
+  my $snapage=time()-$snaptime;
+  if($snapage < $age) {
+    return "OK($snapage < $age)";
+  }elsif ($snapage >= $age){
+    return "BAD($snapage >= $age)";
   }
-  return "BAD(unexpected output $output)";
+  return "BAD(for snapshot $recentsnap we have unexpected creation $snaptime)";
 };
 1;
 
