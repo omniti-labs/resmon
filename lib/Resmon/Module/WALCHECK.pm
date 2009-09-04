@@ -15,16 +15,16 @@ use Time::Local;
 
 #########################
 sub splittime {
-my ($val,@list) = @_;
-my @rv;
+  my ($val,@list) = @_;
+  my @rv;
 
-$val = abs($val);
-foreach my $factor (@list){
-push @rv,$val%$factor;
-$val/=$factor;
-}
-push @rv,int($val);
-return @rv;
+  $val = abs($val);
+  foreach my $factor (@list){
+    push @rv,$val%$factor;
+    $val/=$factor;
+  }
+  push @rv,int($val);
+  return @rv;
 }
 #########################
 
@@ -40,7 +40,6 @@ sub handler {
   while(<F>) {
     if(/LOG:  restored log file/) {
       ($year,$month,$day,$hour,$min) = ( $_ =~ /^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d+):(\d+)/ );
-	$moo = 'moo';
     }
   }
   close(F);
@@ -57,9 +56,9 @@ sub handler {
 
   if ($diff > 3600)
   {
-        return  "BAD($diff seconds behind)";
+    return  "BAD($diff seconds behind)";
   } else {
-        return  "OK($diff seconds behind)";
+    return  "OK($diff seconds behind)";
   }
 }
 1;
