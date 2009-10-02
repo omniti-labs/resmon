@@ -61,8 +61,19 @@ sub xml_kv_dump {
       $rv .= xml_kv_dump($value, $indent + 2);
       $rv .= " " x $indent;
       $rv .= "</$key>\n";
-    }
-    else {
+    } elsif (ref $value eq 'ARRAY') {
+      # A value/type pair
+      my $type = $value->[1];
+      if ($type !~ /^[0iIlLns]$/) {
+        $type = "0";
+      }
+      $value = $value->[0];
+      $value =~ s/&/&amp;/g;
+      $value =~ s/</&lt;/g;
+      $value =~ s/>/&gt;/g;
+      $value =~ s/'/&apos;/g;
+      $rv .= "<$key type=\"$type\">$value</$key>\n";
+    } else {
       $value =~ s/&/&amp;/g;
       $value =~ s/</&lt;/g;
       $value =~ s/>/&gt;/g;
@@ -122,7 +133,11 @@ sub dump_oldstyle {
   my $self = shift;
   my $response = $self->dump_generic(sub {
     my($module,$service,$info) = @_;
-    return "$service($module) :: $info->{state}($info->{message})\n";
+    my $message = $info->{message};
+    if (ref $message eq "ARRAY") {
+        $message = $message->[0];
+    }
+    return "$service($module) :: $info->{state}($message)\n";
   });
   return $response;
 }
@@ -517,10 +532,14 @@ sub store {
   %{$self->{store}->{$type}->{$name}} = %$info;
   $self->{store}->{$type}->{$name}->{last_update} = time;
   $self->store_shared_state();
+  my $message = $info->{message};
+  if (ref $message eq "ARRAY") {
+    $message = $message->[0];
+  }
   if($self->{handle}) {
-    $self->{handle}->print("$name($type) :: $info->{state}($info->{message})\n");
+    $self->{handle}->print("$name($type) :: $info->{state}($message)\n");
   } else {
-    print "$name($type) :: $info->{state}($info->{message})\n";
+    print "$name($type) :: $info->{state}($message)\n";
   }
 }
 sub purge {
