@@ -60,7 +60,7 @@ sub handler {
     $arg->{'configstatus'} = $configstatus || "OK";
     $arg->{'modstatus'} = $modstatus || "OK";
 
-    return $status, "$hostname $statusmsg ($revision)";
+    return $status, ["$hostname $statusmsg ($revision)", "s"];
 }
 
 1;
