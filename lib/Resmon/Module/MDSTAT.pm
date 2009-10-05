@@ -12,13 +12,14 @@ sub handler {
     my $getnext = 0;
     my $status = "OK";
     my @message = ();
+    my $array = "";
     while (<FH>) {
         chomp;
         if (/^(md[0-9]+)\s*:\s+/) {
-            my $array = $1;
+            $array = $1;
             my $messageline = "$array ";
             my @baddevs = ();
-            foreach my $part (split(/ /,$')) {
+            foreach my $part (split(/ /,"$'")) {
                 if ($part eq "active") {
                     $messageline .= "active ";
                 } elsif ($part eq "inactive") {
@@ -37,6 +38,18 @@ sub handler {
                     " faulted";
             }
             push @message, $messageline;
+        } elsif (/\[([U_]+)\]/) {
+            my $devices = $1;
+            my $count = ($devices =~ tr/_//);
+            if ($count > 0) {
+                $status = "BAD";
+                # Plural if required
+                my $s = '';
+                if ($count > 1) {
+                    $s = 's';
+                }
+                push @message, "$array - $count device$s down";
+            }
         }
     }
     return $status, join('; ', @message);
