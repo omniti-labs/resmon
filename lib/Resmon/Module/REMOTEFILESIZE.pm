@@ -5,8 +5,18 @@ use Resmon::ExtComm qw/cache_command/;
 
 sub handler {
   my $arg = shift;
-  my $host = $arg->{'host'};
-  my $file = $arg->{'object'};
+  my $host;
+  my $object;
+  if ($arg->{'object'} =~ ';') {
+    # Specify the host in hostname:/path/to/file format, this method allows
+    # you to monitor the same file on multiple hosts
+    ($host, $file) = split /;/,$arg->{'object'},2;
+  } else {
+    # Specify host as a paramater. This method doesn't allow you to monitor
+    # the same file on multiple hosts
+    $host = $arg->{'host'};
+    $file = $arg->{'object'};
+  }
   my $output = cache_command("ssh -i /root/.ssh/id_dsa $host du -k $file", 600);
   $output =~ /^(\d+)\s/; 
   my $size = $1 * 1024;
