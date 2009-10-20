@@ -23,6 +23,15 @@ use Resmon::Module;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
+my $usekstat = 0;
+my $kstat;
+if ($^O eq 'solaris') {
+    eval "use Sun::Solaris::Kstat";
+    unless ($@) {
+        $usekstat = 1;
+        $kstat = Sun::Solaris::Kstat->new();
+    }
+}
 
 sub handler {
     my $self = shift;
@@ -48,8 +57,7 @@ sub handler {
         };
         close(MEMINFO);
     } elsif ($^O eq 'solaris') {
-        eval "use Sun::Solaris::Kstat";
-        if ($@) {
+        if (!$usekstat) {
             # Kstat isn't available
             if ($includecache) {
                 return "BAD", "Kstat not available - can't report on arc size";
@@ -70,7 +78,6 @@ sub handler {
             }
         } else {
             # We have kstat, use that for everything
-            my $kstat = Sun::Solaris::Kstat->new();
             my $pagesize = `pagesize`;
             my $syspages = $kstat->{unix}->{0}->{system_pages};
             $total_mem = $syspages->{physmem} * $pagesize / 1024 / 1024;
