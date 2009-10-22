@@ -12,7 +12,7 @@ switch ($^O) {
     case 'solaris'  { $dfcmd = 'df -Fufs -oi';
                       $dfregex = '(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%'}
     case 'openbsd'  { $dfcmd = 'df -i';
-                      $dfregex = '(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%\s+(\d+)\s+(\d+)\s+(\d+)%'}
+                      $dfregex = '(\d+)\s+(\d+)\s+(-?\d+)\s+(\d+)%\s+(\d+)\s+(\d+)\s+(\d+)%'}
     else            { $dfcmd = 'df -iP';
                       $dfregex = '(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%'}
 }
