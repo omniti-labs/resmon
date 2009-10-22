@@ -152,7 +152,7 @@ while(1) {
       my $confighash = {};
       eval { $confighash = $monobj->config_as_hash(); };
       my $results = {
-        configuration => $confighash,
+        #configuration => $confighash,
         last_runtime_seconds => sprintf("%.6f", tv_interval($starttime)),
       };
       if($checkstat) {

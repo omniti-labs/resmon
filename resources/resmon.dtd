@@ -1,16 +1,13 @@
 <!ELEMENT ResmonResults (ResmonResult+)>
-<!ELEMENT ResmonResult (last_runtime_seconds, last_update, configuration,
-                        message, state)>
+<!ELEMENT ResmonResult (last_runtime_seconds, last_update, message, state)>
 <!ATTLIST ResmonResult
        module CDATA #REQUIRED
        service CDATA #REQUIRED
 >
 <!ELEMENT last_runtime_seconds (#PCDATA)>
 <!ELEMENT last_update (#PCDATA)>
-<!ELEMENT configuration (ANY)>
 <!ELEMENT message (#PCDATA)>
 <!ATTLIST message
        type CDATA (0|i|I|l|L|n|s) #IMPLIED
 >
 <!ELEMENT state (BAD|WARNING|OK)>
-

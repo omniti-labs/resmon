@@ -208,22 +208,6 @@ sub get_xsl() {
                 <xsl:value-of select="state"/>:
                 <xsl:value-of select="message" />
             </h2>
-            <a class="config" href="#">
-                Hover to view configuration...
-                <table>
-                    <tr>
-                        <th>Name</th>
-                        <th>Value</th>
-                    </tr>
-                    <xsl:for-each select="configuration/*">
-                        <xsl:sort select="name(.)" />
-                        <tr>
-                            <td><xsl:value-of select="name(.)" /></td>
-                            <td><xsl:value-of select="." /></td>
-                        </tr>
-                    </xsl:for-each>
-                </table>
-            </a>
         </div>
     </xsl:for-each>
 </body>
@@ -254,27 +238,6 @@ h2 {
     padding: 1em;
     margin: 2em;
     background-color: #eeeeee;
-}
-
-a.config {
-    color: black;
-}
-
-a.config:visited {
-    color: black;
-}
-
-a.config table {
-    display: none
-}
-
-a.config:hover table {
-    display: block;
-    position: fixed;
-    top: 1em;
-    right: 1em;
-    max-width: 95%;
-    overflow: hidden;
 }
 
 .info {
