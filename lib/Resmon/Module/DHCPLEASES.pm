@@ -49,7 +49,7 @@ sub handler {
   if ($actives < $warn) {
     return("OK($actives leases)");
   }elsif ($actives < $crit) {
-    return("WARN($actives leases)");
+    return("WARNING($actives leases)");
   }else {
     return("BAD($actives leases)");
   }
