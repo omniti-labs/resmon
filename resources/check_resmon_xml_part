@@ -74,6 +74,13 @@ eval {
     $state = "CRITICAL" if ($state eq "BAD");
     # Get the message
     my $message = $ref->{ResmonResult}->{message};
+    # If we have attributes, then get the text content
+    if (ref($message) eq 'HASH') {
+        $message = $message->{'content'};
+    }
+    if (!defined($message)) {
+        $message = "(no message)";
+    }
     my $last_update = time() - $ref->{ResmonResult}->{last_update};
     # If we have stale information, then go critical
     if($opt_A && $opt_A < $last_update) {
