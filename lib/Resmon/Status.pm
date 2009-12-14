@@ -55,13 +55,23 @@ sub xml_kv_dump {
   my $indent = shift || 0;
   my $rv = '';
   while(my ($key, $value) = each %$info) {
-    $rv .= " " x $indent;
     if(ref $value eq 'HASH') {
-      $rv .= "<$key>\n";
-      $rv .= xml_kv_dump($value, $indent + 2);
-      $rv .= " " x $indent;
-      $rv .= "</$key>\n";
+      while (my ($k, $v) = each %$value) {
+        $rv .= " " x $indent;
+        $rv .= "<$key name=\"$k\"";
+        if (ref($v) eq 'ARRAY') {
+          # A value/type pair
+          my $type = $v->[1];
+          if ($type !~ /^[0iIlLns]$/) {
+              $type = "0";
+          }
+          $rv .= " type=\"$type\"";
+          $v = $v->[0];
+        }
+        $rv .= ">$v</$key>\n";
+      }
     } else {
+      $rv .= " " x $indent;
       $value =~ s/&/&amp;/g;
       $value =~ s/</&lt;/g;
       $value =~ s/>/&gt;/g;
@@ -121,7 +131,7 @@ sub dump_oldstyle {
   my $self = shift;
   my $response = $self->dump_generic(sub {
     my($module,$service,$info) = @_;
-    my $message = $info->{message};
+    my $message = $info->{metric}->{message};
     if (ref $message eq "ARRAY") {
         $message = $message->[0];
     }
@@ -194,7 +204,7 @@ sub get_xsl() {
             </h1>
             <h2>
                 <xsl:value-of select="state"/>:
-                <xsl:value-of select="message" />
+                <xsl:value-of select="metric[attribute::name='message']" />
             </h2>
         </div>
     </xsl:for-each>
@@ -483,7 +493,7 @@ sub store {
   %{$self->{store}->{$type}->{$name}} = %$info;
   $self->{store}->{$type}->{$name}->{last_update} = time;
   $self->store_shared_state();
-  my $message = $info->{message};
+  my $message = $info->{metric}->{message};
   if (ref $message eq "ARRAY") {
     $message = $message->[0];
   }

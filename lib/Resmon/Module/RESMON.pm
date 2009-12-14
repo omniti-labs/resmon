@@ -61,9 +61,7 @@ sub handler {
     $arg->{'modstatus'} = $modstatus || "OK";
 
     return $status, {
-        "message" => "$hostname $statusmsg ($revision)",
-        "type" => "s",
-        "metric" => "noop"
+        "message" => ["$hostname $statusmsg ($revision)", "s"]
     };
 }
 
