@@ -61,18 +61,6 @@ sub xml_kv_dump {
       $rv .= xml_kv_dump($value, $indent + 2);
       $rv .= " " x $indent;
       $rv .= "</$key>\n";
-    } elsif (ref $value eq 'ARRAY') {
-      # A value/type pair
-      my $type = $value->[1];
-      if ($type !~ /^[0iIlLns]$/) {
-        $type = "0";
-      }
-      $value = $value->[0];
-      $value =~ s/&/&amp;/g;
-      $value =~ s/</&lt;/g;
-      $value =~ s/>/&gt;/g;
-      $value =~ s/'/&apos;/g;
-      $rv .= "<$key type=\"$type\">$value</$key>\n";
     } else {
       $value =~ s/&/&amp;/g;
       $value =~ s/</&lt;/g;

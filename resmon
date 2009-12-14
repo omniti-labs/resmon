@@ -163,7 +163,13 @@ while(1) {
         }
       } else {
         $results->{state} = $check_rv;
-        $results->{message} = $check_mess;
+        if (ref($check_mess) eq "HASH") {
+            while(my ($k, $v) = each %$check_mess) {
+                $results->{$k} = $v;
+            }
+        } else {
+            $results->{message} = $check_mess;
+        }
       }
       $status->store($module_name,$monobj->{'object'}, $results);
     }
