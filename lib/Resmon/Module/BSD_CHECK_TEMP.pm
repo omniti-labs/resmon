@@ -16,7 +16,7 @@ sub handler {
   my $warning = $arg->{'warning'};
   my $critical = $arg->{'critical'};
   $warning = $critical if not $warning;
-  my $output = cache_command("sysctl  -n hw.sensors.$chip.$sensor", 30);
+  my $output = cache_command("sysctl -n hw.sensors.$chip.$sensor", 30);
   print STDERR $output if $DEBUG;
   my $temp;
   my $units;
@@ -25,17 +25,17 @@ sub handler {
 
   return "OK", {
     message => "$temp $units $sensor\@$chip",
-    temp => $temp,
+    temp => [$temp, "i"],
   } if ($temp && ($temp < $warning));
 
   return "WARNING", {
     message => "$temp $units $sensor\@$chip",
-    temp => $temp,
+    temp => [$temp, "i"],
   } if ($temp && ($temp < $critical));
 
   return "BAD", {
     message => "$temp $units $sensor@$chip",
-    temp => $temp,
+    temp => [$temp, "i"],
   };
 };
 1;
