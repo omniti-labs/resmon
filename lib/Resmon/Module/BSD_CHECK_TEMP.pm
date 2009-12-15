@@ -19,10 +19,24 @@ sub handler {
   my $output = cache_command("sysctl  -n hw.sensors.$chip.$sensor", 30);
   print STDERR $output if $DEBUG;
   my $temp;
-  $output =~ m/(-?\d+\.?\d*)/;
-  $temp = $1;
-  return "OK($temp $sensor\@$chip)" if ($temp && ($temp<$warning));
-  return "WARNING($temp $sensor\@$chip)" if ($temp && ($temp<$critical));
-  return "BAD($temp $sensor@$chip)";
+  my $units;
+  $output =~ m/(-?\d+\.?\d*)\s+(\w+)/;
+  ($temp, $units) = ($1, $2);
+
+  return "OK", {
+    message => "$temp $units $sensor\@$chip",
+    temp => $temp,
+  } if ($temp && ($temp < $warning));
+
+  return "WARNING", {
+    message => "$temp $units $sensor\@$chip",
+    temp => $temp,
+  } if ($temp && ($temp < $critical));
+
+  return "BAD", {
+    message => "$temp $units $sensor@$chip",
+    temp => $temp,
+  };
 };
 1;
+  
