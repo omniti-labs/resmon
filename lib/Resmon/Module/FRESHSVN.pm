@@ -49,7 +49,7 @@ sub handler {
     my $lag=$cTime-$uTime;
     my $maxlag=$arg->{'maxlag'}*60 || 330;
     if ($lag <= $maxlag){
-      return "OK(delay = $lag < $maxlag)";
+      return "OK(delay $lag is less than $maxlag)";
     }
     elsif ( ( ($us+60*($um+60*($uh+24*$uD))) < $maxlag ) 
          && ( ($cs+60*($cm+60*($ch+24*$cD))) < 2 * $maxlag )
