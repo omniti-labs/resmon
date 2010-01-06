@@ -68,14 +68,12 @@ sub xml_kv_dump {
           $rv .= " type=\"$type\"";
           $v = $v->[0];
         }
+        $v = xml_escape($v);
         $rv .= ">$v</$key>\n";
       }
     } else {
       $rv .= " " x $indent;
-      $value =~ s/&/&amp;/g;
-      $value =~ s/</&lt;/g;
-      $value =~ s/>/&gt;/g;
-      $value =~ s/'/&apos;/g;
+      $value = xml_escape($value);
       $rv .= "<$key>$value</$key>\n";
     }
   }
@@ -88,6 +86,14 @@ sub xml_info {
   $rv .= xml_kv_dump($info, 4);
   $rv .= "  </ResmonResult>\n";
   return $rv;
+}
+sub xml_escape {
+  my $v = shift;
+  $v =~ s/&/&amp;/g;
+  $v =~ s/</&lt;/g;
+  $v =~ s/>/&gt;/g;
+  $v =~ s/'/&apos;/g;
+  return $v;
 }
 sub dump_generic {
   my $self = shift;
