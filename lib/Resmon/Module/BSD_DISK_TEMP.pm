@@ -5,7 +5,7 @@ use Resmon::Module;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
-my $DEBUG=0;
+my $DEBUG=2;
 
 
 sub handler {

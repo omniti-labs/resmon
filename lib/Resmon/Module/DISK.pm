@@ -10,7 +10,6 @@ sub handler {
   my $devorpart = $arg->{'object'};
   my $output = cache_command("$dfcmd $devorpart", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
-  print "$line";
   if($line =~ /(\d+)\s+(\d+)\s+(\d+)%/) {
     $status = "OK";
     # Check free space for an exact value in KB
