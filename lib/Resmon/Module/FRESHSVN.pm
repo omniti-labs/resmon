@@ -1,6 +1,6 @@
 package Resmon::Module::FRESHSVN;
 use strict;
-use Resmon::ExtComm qw/cache_command/;
+use Resmon::ExtComm qw/cache_command run_cmd/;
 use vars qw/@ISA/;
 use File::Find;
 
@@ -35,7 +35,8 @@ sub handler {
   if(!$ur){ return "BAD(Unable to determine latest revision in repository)"; }
   if($ur <= $mr){ return "OK(rev:$ur)"; }
   else{
-    my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /, `date '+%Y %m %d %H %M %S'`);
+    my ($cY,$cM,$cD,$ch,$cm,$cs) = split (/ /,
+        run_cmd("date '+%Y %m %d %H %M %S'"));
     my $cTime=$cs+60*($cm+60*($ch+24*($cD+31*($cM+12*$cY))));
     my $dNow = "$cM/$cD/$cY $ch:$cm:$cs"; chomp $dNow;
     my ($uY,$uM,$uD,$uh,$um,$us);

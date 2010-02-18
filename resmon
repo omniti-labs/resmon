@@ -163,6 +163,7 @@ while(1) {
         if ($checkstat eq "alarm\n") {
           $results->{metric} = { "message" =>
               "Check timeout"};
+          Resmon::ExtComm::clean_up;
         }
       } else {
         $results->{state} = $check_rv;

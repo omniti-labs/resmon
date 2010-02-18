@@ -1,5 +1,5 @@
 package Resmon::Module::DHCPLEASES;
-use Resmon::ExtComm qw/cache_command/;
+use Resmon::ExtComm qw/cache_command run_cmd/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
@@ -9,7 +9,7 @@ sub handler {
   my $file = "/var/db/dhcpd.leases";
   my %ips;
   open (IN, '<', $file);
-  my $date = `date -u +'%Y/%m/%d %H:%M:%S;'`;
+  my $date = run_cmd("date -u +'%Y/%m/%d %H:%M:%S;'");
   my ($actives,$mynet,$ip,$starts,$ends)=(0,'','','','');
   while (<IN>) {
     if (/^lease/) {

@@ -1,4 +1,5 @@
 package Resmon::Module::NAGIOS;
+use Resmon::ExtComm qw/cache_command run_cmd/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
@@ -13,7 +14,7 @@ sub handler {
     my $arg = shift;
     my $script = $arg->{'object'} || return "BAD", "No script specified";
     my $scriptargs = $arg->{'args'};
-    my $output = `$script $scriptargs`;
+    my $output = run_cmd("$script $scriptargs");
     my $retval = $?;
     if ($retval == -1) {
         return "BAD", "command returning -1";

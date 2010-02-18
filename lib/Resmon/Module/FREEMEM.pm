@@ -19,6 +19,7 @@ use strict;
 use warnings;
 
 use Resmon::Module;
+use Resmon::ExtComm qw/cache_command run_cmd/;
 
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
@@ -63,14 +64,14 @@ sub handler {
                 return "BAD", "Kstat not available - can't report on arc size";
             }
             # Get free memory using vmstat
-            my @vmstat = `/usr/bin/vmstat 1 2`;
+            my @vmstat = run_cmd("/usr/bin/vmstat 1 2");
             my $line = $vmstat[-1];
             chomp($line);
             my @parts = split(/ /,$line);
             $free_mem = $parts[5] / 1024;
 
             # Get total memory using prtconf
-            my @prtconf = `/usr/sbin/prtconf 2>/dev/null`;
+            my @prtconf = run_cmd("/usr/sbin/prtconf 2>/dev/null");
             foreach (@prtconf) {
                 if (/^Memory size: (\d+) Megabytes/) {
                     $total_mem = $1;
@@ -78,7 +79,7 @@ sub handler {
             }
         } else {
             # We have kstat, use that for everything
-            my $pagesize = `pagesize`;
+            my $pagesize = run_cmd("pagesize");
             my $syspages = $kstat->{unix}->{0}->{system_pages};
             $total_mem = $syspages->{physmem} * $pagesize / 1024 / 1024;
             $free_mem  = $syspages->{freemem} * $pagesize / 1024 / 1024;

@@ -1,5 +1,5 @@
 package Resmon::Module::SPARCTEMP;
-use Resmon::ExtComm qw/cache_command/;
+use Resmon::ExtComm qw/cache_command run_cmd/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
 
@@ -11,7 +11,7 @@ sub handler {
   my $command = "/usr/sbin/prtpicl -v -c temperature-sensor";
   print STDERR "command=$command\n" if $DEBUG;
   my $output = cache_command($command, 30);
- # my $output = `/usr/sbin/prtpicl -v -c temperature-sensor`;
+ # my $output = run_cmd("/usr/sbin/prtpicl -v -c temperature-sensor");
   print STDERR $output if $DEBUG>1;
   my @lines = split(/\n/, $output);
   print STDERR join("\nlines", @lines) if $DEBUG>1;
