@@ -5,7 +5,7 @@ require Exporter;
 use vars qw/@ISA @EXPORT/;
 
 @ISA = qw/Exporter/;
-@EXPORT = qw/cache_command/;
+@EXPORT = qw/cache_command run_cmd/;
 
 my %commhist;
 my %commcache;
@@ -48,7 +48,7 @@ sub run_cmd {
         my @lines = <$r>;
         waitpid($pid, 0);
         delete $children{$pid};
-        return join('\n', @lines);
+        return join("", @lines);
     } else {
         eval {
             open(STDOUT, ">&", $w);
