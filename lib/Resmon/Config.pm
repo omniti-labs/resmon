@@ -80,6 +80,14 @@ sub new {
         $self->{timeout} = $1;
         next;
       }
+      elsif(/\S*AUTHUSER\s+(\S+)\s*;\s*/) {
+        $self->{authuser} = $1;
+        next;
+      }
+      elsif(/\S*AUTHPASS\s+(\S+)\s*;\s*/) {
+        $self->{authpass} = $1;
+        next;
+      }
       else {
         die "Syntax Error on line $line\n";
       }

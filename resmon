@@ -117,7 +117,8 @@ unless($debug) {
 my $list = [];
 $status = Resmon::Status->new($config->{statusfile});
 $status->open();
-$status->serve_http_on($config->{interface}, $config->{port})
+$status->serve_http_on($config->{interface}, $config->{port},
+                       $config->{authuser}, $config->{authpass})
   if($config->{port});
 
 while(1) {

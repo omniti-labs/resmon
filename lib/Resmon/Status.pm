@@ -305,9 +305,17 @@ EOF
 }
 sub service {
   my $self = shift;
-  my ($client, $req, $proto, $snip) = @_;
+  my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
   my $state = $self->get_shared_state();
-  if($req eq '/' or $req eq '/status') {
+  if ($self->{authuser} ne "" &&
+        ($authuser ne $self->{authuser} || $authpass ne $self->{authpass})) {
+      my $response = "<html><head><title>Password required</title></head>" .
+        "<body><h1>Password required</h1></body></html>";
+      $client->print(http_header(401, length($response), 'text/html', $snip,
+          "WWW-Authenticate: Basic realm=\"Resmon\"\n"));
+      $client->print($response . "\r\n");
+      return;
+  } elsif($req eq '/' or $req eq '/status') {
     my $response .= $self->dump_xml();
     $client->print(http_header(200, length($response), 'text/xml', $snip));
     $client->print($response . "\r\n");
@@ -368,18 +376,36 @@ sub http_header {
   my $len = shift;
   my $type = shift || 'text/xml';
   my $close_connection = shift || 1;
+  my $extra_headers = shift;
   return qq^HTTP/1.0 $code OK
 Server: resmon
 ^ . (defined($len) ? "Content-length: $len\n" : "") .
     (($close_connection || !$len) ? "Connection: close\n" : "") .
 qq^Content-Type: $type; charset=utf-8
-
+^ . $extra_headers . qq^
 ^;
+}
+sub base64_decode($) {
+    # Base64 decoding for basic auth
+    # We cheat when doing the decoding - perl can do uudecoding using unpack -
+    # so we just convert to uuencoded text and decode that.
+    my $enc = shift;
+    if (length($enc) % 4 != 0) { return "" } # Length should be multiple of 4
+    $enc =~ tr#A-Za-z0-9+/=##cd; # Ignore any invalid characters
+    $enc =~ tr#A-Za-z0-9+/=# -_#d; # Convert base64 to uuencode alphabet and
+                                   # strip padding
+    if (length($enc) > 63) { return "" }; # Only support up to 63 chars
+                                          # (one uuencoded line)
+    my $len = chr(32 + length($enc)*3/4); # uuencode has a length byte at the
+                                          # beginning
+    return unpack("u", $len.$enc);
 }
 sub serve_http_on {
   my $self = shift;
   my $ip = shift;
   my $port = shift;
+  $self->{authuser} = shift;
+  $self->{authpass} = shift;
   $ip = INADDR_ANY if(!defined($ip) || $ip eq '' || $ip eq '*');
   $port ||= 81;
 
@@ -412,6 +438,8 @@ sub serve_http_on {
         my $req;
         my $proto;
         my $close_connection;
+        my $authuser;
+        my $authpass;
         local $SIG{ALRM} = sub { die "timeout\n" };
         eval {
           alarm($KEEPALIVE_TIMEOUT);
@@ -433,7 +461,8 @@ sub serve_http_on {
               }
               else {
                 if(/^$/) {
-                  $self->service($client, $req, $proto, $close_connection);
+                  $self->service($client, $req, $proto, $close_connection,
+                    $authuser, $authpass);
                   last if ($close_connection);
                   alarm($KEEPALIVE_TIMEOUT);
                   $req = undef;
@@ -446,6 +475,10 @@ sub serve_http_on {
                        ($proto == 1.1 && lc($2) ne 'close')) {
                       $close_connection = 0;
                     }
+                  }
+                  if(/^Authorization: Basic (\S+)/) {
+                      my $dec = base64_decode($1);
+                      ($authuser, $authpass) = split /:/, $dec, 2
                   }
                 }
                 else {
