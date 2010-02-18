@@ -10,23 +10,28 @@ sub handler {
   my $devorpart = $arg->{'object'};
   my $output = cache_command("$dfcmd $devorpart", 120);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
-  if($line =~ /(\d+)\s+(\d+)%/) {
+  if($line =~ /(\d+)\s+(\d+)\s+(\d+)%/) {
     $status = "OK";
     # Check free space for an exact value in KB
-    if(exists $arg->{'minkbfree'} && $1 < $arg->{'minkbfree'}) {
+    if(exists $arg->{'minkbfree'} && $2 < $arg->{'minkbfree'}) {
         $status = "BAD";
     }
-    if(exists $arg->{'warnkbfree'} && $1 < $arg->{'warnkbfree'}) {
+    if(exists $arg->{'warnkbfree'} && $2 < $arg->{'warnkbfree'}) {
         $status = "WARNING";
     }
     # Check for percentage used and alert over that value
-    if(exists $arg->{'limit'} && $2 > $arg->{'limit'}) {
+    if(exists $arg->{'limit'} && $3 > $arg->{'limit'}) {
         $status = "BAD";
     }
-    if(exists $arg->{'warnat'} && $2 > $arg->{'warnat'}) {
+    if(exists $arg->{'warnat'} && $3 > $arg->{'warnat'}) {
         $status = "WARNING"
     }
-    return $status, "$2% full -- $1KB free";
+    return $status, {
+        "message" => "$3% full -- $2KB free",
+        "usedkb" => "$1",
+        "freekb" => "$2",
+        "usedpercent" => "$3"
+    }
   }
   return "BAD", "0 -- no data";
 }
