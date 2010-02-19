@@ -28,9 +28,9 @@ sub handler {
     }
     return $status, {
         "message" => "$3% full -- $2KB free",
-        "usedkb" => "$1",
-        "freekb" => "$2",
-        "usedpercent" => "$3"
+        "used_KB" => "$1",
+        "free_KB" => "$2",
+        "used_percent" => "$3"
     }
   }
   return "BAD", "0 -- no data";
