@@ -186,32 +186,37 @@ sub get_xsl() {
                 <xsl:attribute name="class">
                     item <xsl:value-of select="state" />
                 </xsl:attribute>
-            <ul class="info">
-                <li>Time taken for last check:
-                    <xsl:value-of select="last_runtime_seconds" /></li>
-                <li>Last updated:
-                    <xsl:value-of select="last_update" /></li>
-            </ul>
+            <div class="info">
+                Last check: <xsl:value-of select="last_runtime_seconds" />
+                /
+                Last updated: <xsl:value-of select="last_update" />
+            </div>
             <h1>
                 <a>
                     <xsl:attribute name="href">
                         /<xsl:value-of select="\@module" />
                     </xsl:attribute>
                     <xsl:value-of select="\@module" />
-                </a>
-                -
-                <a>
+                </a>`<a>
                     <xsl:attribute name="href">
                         /<xsl:value-of select="\@module"
                             />/<xsl:value-of select="\@service" />
                     </xsl:attribute>
                     <xsl:value-of select="\@service" />
                 </a>
-            </h1>
-            <h2>
+                -
                 <xsl:value-of select="state"/>:
                 <xsl:value-of select="metric[attribute::name='message']" />
-            </h2>
+            </h1>
+            <xsl:if test="count(metric[attribute::name!='message']) > 0">
+                <ul>
+                    <xsl:for-each select="metric[attribute::name!='message']">
+                        <xsl:sort select="\@name" />
+                        <li><xsl:value-of select="\@name" /> = 
+                        <xsl:value-of select="." /></li>
+                    </xsl:for-each>
+                </ul>
+            </xsl:if>
         </div>
     </xsl:for-each>
 </body>
@@ -227,6 +232,7 @@ sub get_css() {
 body {
     font-family: Verdana, Arial, helvetica, sans-serif;
 }
+
 h1 {
     margin: 0;
     font-size: 120%;
@@ -234,11 +240,12 @@ h1 {
 
 h2 {
     margin: 0;
-    font-sizE: 110%;
+    font-size: 110%;
 }
 
 .item {
     border: 1px solid black;
+    border-left: 10px solid #999;
     padding: 1em;
     margin: 2em;
     background-color: #eeeeee;
@@ -253,14 +260,17 @@ h2 {
 
 .OK {
     background-color: #afa;
+    border-left: 10px solid #393;
 }
 
 .WARNING {
     background-color: #ffa;
+    border-left: 10px solid #993;
 }
 
 .BAD {
     background-color: #faa;
+    border-left: 10px solid #933;
 }
 
 table {
@@ -291,6 +301,7 @@ ul.navbar {
     list-style: none;
     font-size: 80%;
 }
+
 ul.navbar li {
     display: inline;
     padding-left: 1em;
@@ -298,6 +309,23 @@ ul.navbar li {
     margin-right: -1px;
     border-left: 1px solid black;
     border-right: 1px solid black;
+}
+
+a.metrics, a.metrics:visited {
+    color: black;
+}
+
+a.metrics table {
+    display: none;
+}
+
+a.metrics:hover table {
+    display: block;
+    position: relative;
+    top: 1em;
+    right: 1em;
+    max-width: 95%;
+    overflow: hidden;
 }
 EOF
   ;
