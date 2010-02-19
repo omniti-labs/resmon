@@ -22,13 +22,22 @@ sub handler {
   my $devorpart = $arg->{'object'};
   my $output = cache_command($dfcmd, 30);
   my ($line) = grep(/$devorpart\s*/, split(/\n/, $output));
+  my $status = "BAD";
+  my $metrics = {
+    message => "no data"
+  };
   if($line =~ /$dfregex/) {
     if($4 <= $arg->{'limit'}) {
-      return "OK($2 $4% full)";
+      $status = "OK";
     }
-    return "BAD($2 $4% full)";
-  }
-  return "BAD(no data)";
+    $metrics = {
+      "message" => "$2 $4% full",
+      "inodes_used" => "$2",
+      "inodes_free" => "$3"
+    };
+    $metrics->{'inodes_total'} = $1 if ($1 ne "");
+  };
+  return $status, $metrics;
 }
 
 1;
