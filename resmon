@@ -108,9 +108,9 @@ sub reap_zombies {
 unless($debug) {
   fork && exit;
   setsid;
-  close(STDIN);
-  close(STDOUT);
-  close(STDERR);
+  open(STDIN, "</dev/null");
+  open(STDOUT, ">/dev/null");
+  open(STDERR, ">/dev/null");
   fork && exit;
 }
 
