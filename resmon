@@ -178,6 +178,7 @@ while(1) {
         }
       }
       $status->store($module_name,$monobj->{'object'}, $results);
+      printf("%s: %s\n%s\n", $module_name, $monobj->{'object'}, Dumper($results)) if $debug;
     }
   }
   $status->close();
