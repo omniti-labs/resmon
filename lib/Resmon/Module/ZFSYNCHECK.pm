@@ -8,7 +8,6 @@ sub handler {
   my $arg=shift;
   my $zfs=$arg->{'object'};
   my $age=$arg->{'age'};
-  my $recentsnap;
   my $attempt=0;
   my $MAXATTEMPTS=5;
   my $ZFSQUERY="/usr/sbin/zfs list -tsnapshot -H -Screation -oname";
