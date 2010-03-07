@@ -8,9 +8,30 @@ sub handler {
   my $arg=shift;
   my $zfs=$arg->{'object'};
   my $age=$arg->{'age'};
-  my $recentsnap = cache_command("pgrep zfs 2>&1 >/dev/null || zfs list -tsnapshot -H -Screation -oname | grep '^$zfs\@' | head -1", 300);
+  my $recentsnap;
+  my $attempt=0;
+  my $MAXATTEMPTS=5;
+  my $ZFSQUERY="/usr/sbin/zfs list -tsnapshot -H -Screation -oname";
+  while (`pgrep -f -l "^$ZFSQUERY"`) {
+    if ($attempt++ < $MAXATTEMPTS) {
+      sleep(1);
+    }
+    else {
+      return "BAD ($ZFSQUERY hanged)";
+    }
+  }
+  my $recentsnap = cache_command("$ZFSQUERY| grep '^$zfs\@' | head -1", 300);
   return "BAD(no snapshot of $zfs)" if not $recentsnap;
-  my $snaptime = cache_command("zfs get -H -p -ovalue creation $recentsnap", 300);
+  $ZFSQUERY="/usr/sbin/zfs get -H -p -ovalue creation $recentsnap";
+  while (`pgrep -f "^$ZFSQUERY"`) {
+    if ($attempt++ < $MAXATTEMPTS) {
+      sleep(1);
+    }
+    else {
+      return "BAD ($ZFSQUERY hanged)";
+    }
+  }
+  my $snaptime = cache_command($ZFSQUERY, 300);
   my $snapage=time()-$snaptime;
   if($snapage < $age) {
     return "OK($snapage < $age)";
