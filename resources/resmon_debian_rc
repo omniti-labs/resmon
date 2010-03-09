@@ -1,0 +1,88 @@
+#!/bin/bash
+# Resmon init script for Debian/Ubuntu
+
+### BEGIN INIT INFO
+# Provides: resmon
+# Required-Start: $network $local_fs
+# Required-Stop:  $network $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Resmon system monitor
+### END INIT INFO
+
+# Source function library.
+. /lib/lsb/init-functions
+
+RESMON_DIR=/opt/resmon
+RESMON_CONF=$RESMON_DIR/resmon.conf
+RESMON_BIN=$RESMON_DIR/resmon
+RESMON_LOCK=/var/lock/resmon
+
+[ -x $RESMON_BIN ] || exit 0
+[ -f $RESMON_CONF ] || exit 0
+
+RETVAL=0
+
+umask 077
+
+start() {
+        echo -n $"Starting resmon: resmon"
+        start-stop-daemon --start --exec $RESMON_BIN
+        RETVAL=$?
+        echo "."
+        [ $RETVAL -eq 0 ] && touch $RESMON_LOCK
+        return $RETVAL
+}
+stop() {
+        echo -n "Shutting down resmon: resmon"
+        start-stop-daemon --stop --name resmon --exec /usr/bin/perl
+        echo "."
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && rm -f $RESMON_LOCK
+        return $RETVAL
+}
+status() {
+    pgrep -f $RESMON_BIN > /dev/null
+    if [ $? = 0 ]; then
+            echo "Resmon is running."
+    else
+            echo "Resmon is not running."
+    fi
+}
+restart() {
+        stop
+        start
+}
+reload() {
+        echo -n "Reloading resmon: resmon"
+        killproc resmon -HUP
+        echo "."
+        return $?
+}
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart)
+        restart
+        ;;
+  reload)
+        reload
+        ;;
+  force-reload)
+        reload
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|status|restart|reload|force-reload}"
+        exit 1
+esac
+
+exit $?
+
