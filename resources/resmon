@@ -21,57 +21,57 @@ RETVAL=0
 umask 077
 
 start() {
- 	echo -n $"Starting resmon: "
-	daemon /opt/resmon/resmon
-	RETVAL=$?
-	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/resmon
-	return $RETVAL
-}	
+        echo -n $"Starting resmon: "
+        daemon /opt/resmon/resmon
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/resmon
+        return $RETVAL
+}
 stop() {
-	echo -n $"Shutting down resmon: "
-	killproc resmon
-	echo
-	RETVAL=$?
-	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/resmon
-	return $RETVAL
+        echo -n $"Shutting down resmon: "
+        killproc resmon
+        echo
+        RETVAL=$?
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/resmon
+        return $RETVAL
 }
 rhstatus() {
-	status resmon
+        status resmon
 }
 restart() {
-	stop
-	start
-}	
+        stop
+        start
+}
 reload() {
-	echo -n $"Reloading resmon: "
-	killproc resmon -HUP
-	echo
-	return $?
+        echo -n $"Reloading resmon: "
+        killproc resmon -HUP
+        echo
+        return $?
 }
 
 case "$1" in
   start)
-  	start
-	;;
+        start
+        ;;
   stop)
-  	stop
-	;;
+        stop
+        ;;
   status)
-  	rhstatus
-	;;
+        rhstatus
+        ;;
   restart)
-  	restart
-	;;
+        restart
+        ;;
   reload)
-	reload
-	;;
+        reload
+        ;;
   condrestart)
-  	[ -f /var/lock/subsys/resmon ] && restart || :
-	;;
+        [ -f /var/lock/subsys/resmon ] && restart || :
+        ;;
   *)
-	echo $"Usage: $0 {start|stop|status|restart|condrestart}"
-	exit 1
+        echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+        exit 1
 esac
 
 exit $?
