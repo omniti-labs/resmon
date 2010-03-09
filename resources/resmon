@@ -13,8 +13,13 @@
 # Source function library.
 . /etc/init.d/functions
 
-[ -f /opt/resmon/resmon ] || exit 0
-[ -f /opt/resmon/resmon.conf ] || exit 0
+RESMON_DIR=/opt/resmon
+RESMON_CONF=$RESMON_DIR/resmon.conf
+RESMON_BIN=$RESMON_DIR/resmon
+RESMON_LOCK=/var/lock/subsys/resmon
+
+[ -f $RESMON_BIN ] || exit 0
+[ -f $RESMON_CONF ] || exit 0
 
 RETVAL=0
 
@@ -22,10 +27,10 @@ umask 077
 
 start() {
         echo -n $"Starting resmon: "
-        daemon /opt/resmon/resmon
+        daemon $RESMON_BIN
         RETVAL=$?
         echo
-        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/resmon
+        [ $RETVAL -eq 0 ] && touch $RESMON_LOCK
         return $RETVAL
 }
 stop() {
@@ -33,7 +38,7 @@ stop() {
         killproc resmon
         echo
         RETVAL=$?
-        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/resmon
+        [ $RETVAL -eq 0 ] && rm -f $RESMON_LOCK
         return $RETVAL
 }
 rhstatus() {
@@ -67,7 +72,7 @@ case "$1" in
         reload
         ;;
   condrestart)
-        [ -f /var/lock/subsys/resmon ] && restart || :
+        [ -f $RESMON_LOCK ] && restart || :
         ;;
   *)
         echo $"Usage: $0 {start|stop|status|restart|condrestart}"
