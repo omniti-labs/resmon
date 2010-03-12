@@ -106,7 +106,17 @@ sub handler {
         $status = "BAD";
     }
 
-    return $status, $free_msg . " ${total_mem} MB total";
+    my $results = {
+        'message' => "$free_msg ${total_mem} MB total",
+        'free_MB' => $free_mem,
+        'total_MB' => $total_mem
+    };
+    if ($includecache) {
+        $results->{'cache_MB'} = $cache_mem;
+        $results->{'effective_free_MB'} = ($free_mem + $cache_mem);
+    };
+
+    return $status, $results;
 
 }
 1;
