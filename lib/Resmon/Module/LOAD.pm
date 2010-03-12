@@ -27,9 +27,16 @@ sub handler {
             $status = "BAD";
             $sign1 = ">";
         }
-        return $status, "1m: $1 $sign1 $limit1, 5m: $2 $sign5 $limit5, " .
-            "15m: $3 $sign15 $limit15";
+        return $status, {
+            "message" => "1m: $1 $sign1 $limit1, 5m: $2 $sign5 $limit5, " .
+                        "15m: $3 $sign15 $limit15",
+            "1m"  => $1,
+            "5m"  => $2,
+            "15m" => $3
+        }
     }
-    return "BAD", "Unable to determine load average";
+    return "BAD", {
+        "message" => "Unable to determine load average"
+    }
 };
 1;
