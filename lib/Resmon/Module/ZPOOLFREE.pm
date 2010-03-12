@@ -58,8 +58,13 @@ sub handler {
   } else {
     $status = "OK";
   }
-  return $status, sprintf("%.0f%% full, %s used, %s free",
-    $percent, $hused, $hfree);
+  return $status, {
+      'message' => sprintf("%.0f%% full, %s used, %s free",
+          $percent, $hused, $hfree),
+      'percent_full' => sprintf("%.2f", $percent),
+      'used_MB' => ($used/1048576),
+      'free_MB' => ($free/1048576)
+  };
 }
 
 1;
