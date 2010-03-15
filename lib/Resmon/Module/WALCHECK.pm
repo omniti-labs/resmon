@@ -37,11 +37,12 @@ sub handler {
   my $wallog = $files[-1];
 
   open(F, "<", "$logdir/$wallog");
-  while(<F>) {
-    if(/LOG:  restored log file/) {
-      ($year,$month,$day,$hour,$min) = ( $_ =~ /^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d+):(\d+)/ );
-    }
-  }
+  # Manual split here to work around strange bug where <F> doesn't work
+  # when a machine is under load
+  local $/; # Make <F> read the whole file
+  my @lines = grep(/LOG:  restored log file/, split('\n', <F>));
+  ($year,$month,$day,$hour,$min) = (
+      $lines[-1] =~ /^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d+):(\d+)/ );
   close(F);
 
   # subtract 1 to compensate for perl stupidity 
