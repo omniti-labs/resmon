@@ -18,11 +18,12 @@ sub handler {
 
     # Get the global config object
     my $config = $main::config;
-    my $configstatus = $config->{'configstatus'} || "";
-    my $modstatus = $config->{'modstatus'} || "";
+    my $configstatus = $config->{'configstatus'};
+    my $modstatus = $config->{'modstatus'};
 
     ## Current revision
     # Find location of subversion binary
+    # TODO - use svn keywords for this rather than running svn info
     my $svn = 'svn';
     for my $path (qw(/usr/local/bin /opt/omni/bin /opt/csw/bin)) {
         if (-x "$path/svn") {
@@ -33,7 +34,7 @@ sub handler {
     my $output = cache_command("$svn info $resmon_dir 2>&1", 120);
     my $revision = "svn revision unknown";
     for (split(/\n/, $output)) {
-        if (/^Revision:\s*(\d*)$/) { $revision = "r$1"; }
+        if (/^Revision:\s*(\d*)$/) { $revision = "$1"; }
         if (/^svn: (.*) is not a working copy$/) {
             $revision = "not a working copy";
         }
@@ -43,26 +44,12 @@ sub handler {
     # The hostname command croaks (dies) if it fails, hence the eval
     my $hostname = eval { hostname } || "Unknown";
 
-    my $status = "OK";
-    my $statusmsg = "running";
-    if ($configstatus) {
-        $statusmsg = "BAD config file, running on old configuration";
-        $status = "BAD";
-    }
-    if ($modstatus) {
-        $statusmsg .= " with failed modules: $modstatus";
-        $status = "BAD";
-    }
-
-    # Set 'config' variables so it shows up in the xml output
-    $arg->{'revision'} = $revision;
-    $arg->{'hostname'} = $hostname;
-    $arg->{'configstatus'} = $configstatus || "OK";
-    $arg->{'modstatus'} = $modstatus || "OK";
-
-    return $status, {
-        "message" => ["$hostname $statusmsg ($revision)", "s"]
+    return {
+        "revision" => [$revision, "i"],
+        "hostname" => [$hostname, "s"],
+        "configstatus" => [$configstatus ? "BAD" : "OK", "s"],
+        "modstatus" => [$modstatus ? "BAD" : "OK", "s"]
     };
-}
+};
 
 1;

@@ -60,19 +60,10 @@ sub fresh_status_msg {
     }
     return undef;
 }
-
-sub set_status {
+sub cache_metrics {
     my $arg = shift;
-    $arg->{laststatus} = shift;
-    $arg->{lastmessage} = shift;
+    $arg->{lastmetrics} = shift;
     $arg->{lastupdate} = time;
-    if($arg->{laststatus} =~ /^([A-Z]+)\((.*)\)$/s) {
-        # This handles old-style modules that return just set status as
-        #     STATE(message)
-        $arg->{laststatus} = $1;
-        $arg->{lastmessage} = $2;
-    }
-    return ($arg->{laststatus}, $arg->{lastmessage});
 }
 sub config_as_hash {
     my $self = shift;

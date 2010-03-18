@@ -118,33 +118,6 @@ sub dump_generic_module {
     }
     return $rv;
 }
-sub dump_generic_state {
-    # Dumps only checks with a specific state
-    my $self = shift;
-    my $dumper = shift;
-    my $state = shift;
-    my $rv = '';
-    while(my ($module, $services) = each %{$self->{store}}) {
-        while(my ($service, $info) = each %$services) {
-            if ($info->{state} eq $state) {
-                $rv .= $dumper->($module,$service,$info);
-            }
-        }
-    }
-    return $rv;
-}
-sub dump_oldstyle {
-    my $self = shift;
-    my $response = $self->dump_generic(sub {
-            my($module,$service,$info) = @_;
-            my $message = $info->{metric}->{message};
-            if (ref $message eq "ARRAY") {
-                $message = $message->[0];
-            }
-            return "$service($module) :: $info->{state}($message)\n";
-        });
-    return $response;
-}
 sub dump_xml {
     my $self = shift;
     my $response = <<EOF
@@ -171,9 +144,6 @@ sub get_xsl() {
 <body>
     <ul class="navbar">
         <li><a href="/">List all checks</a></li>
-        <li><a href="/BAD">List all checks that are BAD</a></li>
-        <li><a href="/WARNING">List all checks that are WARNING</a></li>
-        <li><a href="/OK">List all checks that are OK</a></li>
     </ul>
     <p>
     Total checks:
@@ -183,9 +153,6 @@ sub get_xsl() {
         <xsl:sort select="\@module" />
         <xsl:sort select="\@service" />
         <div class="item">
-                <xsl:attribute name="class">
-                    item <xsl:value-of select="state" />
-                </xsl:attribute>
             <div class="info">
                 Last check: <xsl:value-of select="last_runtime_seconds" />
                 /
@@ -204,19 +171,14 @@ sub get_xsl() {
                     </xsl:attribute>
                     <xsl:value-of select="\@service" />
                 </a>
-                -
-                <xsl:value-of select="state"/>:
-                <xsl:value-of select="metric[attribute::name='message']" />
             </h1>
-            <xsl:if test="count(metric[attribute::name!='message']) > 0">
-                <ul>
-                    <xsl:for-each select="metric[attribute::name!='message']">
-                        <xsl:sort select="\@name" />
-                        <li><xsl:value-of select="\@name" /> = 
-                        <xsl:value-of select="." /></li>
-                    </xsl:for-each>
-                </ul>
-            </xsl:if>
+            <ul>
+                <xsl:for-each select="metric">
+                    <xsl:sort select="\@name" />
+                    <li><xsl:value-of select="\@name" /> = 
+                    <xsl:value-of select="." /></li>
+                </xsl:for-each>
+            </ul>
         </div>
     </xsl:for-each>
 </body>
@@ -256,21 +218,6 @@ h2 {
     font-size: 80%;
     padding: 0;
     margin: 0;
-}
-
-.OK {
-    background-color: #afa;
-    border-left: 10px solid #393;
-}
-
-.WARNING {
-    background-color: #ffa;
-    border-left: 10px solid #993;
-}
-
-.BAD {
-    background-color: #faa;
-    border-left: 10px solid #933;
 }
 
 table {
@@ -343,14 +290,9 @@ sub service {
                 "WWW-Authenticate: Basic realm=\"Resmon\"\n"));
         $client->print($response . "\r\n");
         return;
-    } elsif($req eq '/' or $req eq '/status') {
+    } elsif($req eq '/') {
         my $response .= $self->dump_xml();
         $client->print(http_header(200, length($response), 'text/xml', $snip));
-        $client->print($response . "\r\n");
-        return;
-    } elsif($req eq '/status.txt') {
-        my $response = $self->dump_oldstyle();
-        $client->print(http_header(200, length($response), 'text/plain', $snip));
         $client->print($response . "\r\n");
         return;
     } elsif($req eq '/resmon.xsl') {
@@ -377,16 +319,7 @@ sub service {
             return;
         }
     } elsif($req =~ /^\/([^\/]+)$/) {
-        if ($1 eq "BAD" || $1 eq "OK" || $1 eq "WARNING") {
-            my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-            $response .= "<ResmonResults>\n".
-            $self->dump_generic_state(\&xml_info,$1) .
-            "</ResmonResults>\n";
-            $client->print(http_header(200, length($response), 'text/xml', $snip));
-            $client->print( $response . "\r\n");
-            return;
-        } elsif(exists($self->{store}->{$1})) {
+        if(exists($self->{store}->{$1})) {
             my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
             my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
             $response .= "<ResmonResults>\n".
@@ -562,10 +495,11 @@ sub store {
     if (ref $message eq "ARRAY") {
         $message = $message->[0];
     }
+    # TODO - print metrics here insead of message
     if($self->{handle}) {
-        $self->{handle}->print("$name($type) :: $info->{state}($message)\n");
+        $self->{handle}->print("$name($type) :: $message\n");
     } else {
-        print "$name($type) :: $info->{state}($message)\n";
+        print "$name($type) :: $message\n";
     }
 }
 sub purge {

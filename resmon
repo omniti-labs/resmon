@@ -126,62 +126,51 @@ while(1) {
         my $coderef = undef;
         eval { $coderef = Resmon::Module::fetch_monitor($module_name); };
         foreach my $monobj (@$mod_configs) {
-            my $check_rv = 'BAD',
             my $check_metric = 'no data';
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired
-            my ($check_rv, $check_metric) = Resmon::Module::fresh_status_msg(
-                $monobj);
+            my $check_metric = Resmon::Module::fresh_status_msg($monobj);
             # Otherwise, run the check
-            if (!$check_rv) {
+            if (!$check_metric) {
                 my $timeout = $monobj->{'check_timeout'} ||
                     $config->{'timeout'};
                 alarm($timeout);
                 eval {
                     local $SIG{ALRM} = sub { die "alarm\n" };
                     if($coderef) {
-                        ($check_rv, $check_metric) = $coderef->($monobj);
+                        $check_metric = $coderef->($monobj);
                     } else {
-                        ($check_rv, $check_metric) = $monobj->handler();
+                        $check_metric = $monobj->handler();
                     }
                 };
                 alarm 0;
-                # Store the last status for use by fresh_status_msg later
-                # Also converts old style status messages
-                ($check_rv, $check_metric) =
-                Resmon::Module::set_status($monobj, $check_rv, $check_metric);
-            }
-            my $checkstat = $@;
-            my $confighash = {};
-            eval { $confighash = $monobj->config_as_hash(); };
-            my $results = {
-                #configuration => $confighash,
-                last_runtime_seconds => sprintf("%.6f", tv_interval($starttime))
+                # Store the last metrics for use by fresh_status_msg later
+                Resmon::Module::cache_metrics($monobj, $check_metric);
             };
-            if($checkstat) {
-                $results->{state} = 'BAD';
+            my $checkproblem = $@;
+            my $results = {
+                last_runtime_seconds => sprintf("%.6f",
+                    tv_interval($starttime)),
+                metric => $check_metric
+            };
+            if($checkproblem) {
                 $results->{metric} = { "message" =>
                     "Bad module or problem running handler code."};
-                if ($checkstat eq "alarm\n") {
-                    $results->{metric} = { "message" =>
-                        "Check timeout"};
+                if ($checkproblem eq "alarm\n") {
+                    $results->{metric} = { "message" => "Check timeout"};
                     Resmon::ExtComm::clean_up;
-                }
-            } else {
-                $results->{state} = $check_rv;
-                if (ref($check_metric) eq "HASH") {
-                    my $metric = {};
-                    while(my ($k, $v) = each %$check_metric) {
-                        $metric->{$k} = $v;
-                    }
-                    $results->{metric} = $metric;
-                } else {
-                    $results->{metric} = { "message" => $check_metric };
                 }
             }
             $status->store($module_name,$monobj->{'object'}, $results);
-            printf("%s: %s\n%s\n", $module_name, $monobj->{'object'},
-                Dumper($results)) if $debug;
+            my $metrics_output = "";
+            while (my ($k, $v) = each (%$check_metric)) {
+                if (ref($v) eq "ARRAY") {
+                    $v = $v->[0];
+                }
+                $metrics_output .= "    $k = $v\n";
+            }
+            printf("%s`%s\n%s\n", $module_name, $monobj->{'object'},
+                $metrics_output) if $debug;
         }
     }
     $status->close();
