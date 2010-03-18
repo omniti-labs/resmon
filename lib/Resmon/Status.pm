@@ -14,151 +14,151 @@ my $SEGSIZE = 1024*256;
 my $KEEPALIVE_TIMEOUT = 5;
 my $REQUEST_TIMEOUT = 60;
 sub new {
-  my $class = shift;
-  my $file = shift;
-  return bless {
-    file => $file
-  }, $class;
+    my $class = shift;
+    my $file = shift;
+    return bless {
+        file => $file
+    }, $class;
 }
 sub get_shared_state {
-  my $self = shift;
-  my $blob;
-  my $len;
-  return unless(defined($self->{shared_state}));
-  # Lock shared segment
-  # Read in
-  shmread($self->{shared_state}, $len, 0, length(pack('i', 0)));
-  $len = unpack('i', $len);
-  shmread($self->{shared_state}, $blob, length(pack('i', 0)), $len);
-  # unlock
-  my $VAR1;
-  eval $blob;
-  die $@ if ($@);
-  $self->{store} = $VAR1;
-  return $self->{store};
+    my $self = shift;
+    my $blob;
+    my $len;
+    return unless(defined($self->{shared_state}));
+    # Lock shared segment
+    # Read in
+    shmread($self->{shared_state}, $len, 0, length(pack('i', 0)));
+    $len = unpack('i', $len);
+    shmread($self->{shared_state}, $blob, length(pack('i', 0)), $len);
+    # unlock
+    my $VAR1;
+    eval $blob;
+    die $@ if ($@);
+    $self->{store} = $VAR1;
+    return $self->{store};
 }
 sub store_shared_state {
-  my $self = shift;
-  return unless(defined($self->{shared_state}));
-  my $blob = Dumper($self->{store});
+    my $self = shift;
+    return unless(defined($self->{shared_state}));
+    my $blob = Dumper($self->{store});
 
-  # Lock shared segment
-  # Write state and flush
-  shmwrite($self->{shared_state}, pack('i', length($blob)),
-           0, length(pack('i', 0))) || die "$!";
-  shmwrite($self->{shared_state}, $blob, length(pack('i', 0)),
-           length($blob)) || die "$!";
-  # unlock
+    # Lock shared segment
+    # Write state and flush
+    shmwrite($self->{shared_state}, pack('i', length($blob)),
+        0, length(pack('i', 0))) || die "$!";
+    shmwrite($self->{shared_state}, $blob, length(pack('i', 0)),
+        length($blob)) || die "$!";
+    # unlock
 }
 sub xml_kv_dump {
-  my $info = shift;
-  my $indent = shift || 0;
-  my $rv = '';
-  while(my ($key, $value) = each %$info) {
-    if(ref $value eq 'HASH') {
-      while (my ($k, $v) = each %$value) {
-        $rv .= " " x $indent;
-        $rv .= "<$key name=\"$k\"";
-        if (ref($v) eq 'ARRAY') {
-          # A value/type pair
-          my $type = $v->[1];
-          if ($type !~ /^[0iIlLns]$/) {
-              $type = "0";
-          }
-          $rv .= " type=\"$type\"";
-          $v = $v->[0];
+    my $info = shift;
+    my $indent = shift || 0;
+    my $rv = '';
+    while(my ($key, $value) = each %$info) {
+        if(ref $value eq 'HASH') {
+            while (my ($k, $v) = each %$value) {
+                $rv .= " " x $indent;
+                $rv .= "<$key name=\"$k\"";
+                if (ref($v) eq 'ARRAY') {
+                    # A value/type pair
+                    my $type = $v->[1];
+                    if ($type !~ /^[0iIlLns]$/) {
+                        $type = "0";
+                    }
+                    $rv .= " type=\"$type\"";
+                    $v = $v->[0];
+                }
+                $v = xml_escape($v);
+                $rv .= ">$v</$key>\n";
+            }
+        } else {
+            $rv .= " " x $indent;
+            $value = xml_escape($value);
+            $rv .= "<$key>$value</$key>\n";
         }
-        $v = xml_escape($v);
-        $rv .= ">$v</$key>\n";
-      }
-    } else {
-      $rv .= " " x $indent;
-      $value = xml_escape($value);
-      $rv .= "<$key>$value</$key>\n";
     }
-  }
-  return $rv;
+    return $rv;
 }
 sub xml_info {
-  my ($module, $service, $info) = @_;
-  my $rv = '';
-  $rv .= "  <ResmonResult module=\"$module\" service=\"$service\">\n";
-  $rv .= xml_kv_dump($info, 4);
-  $rv .= "  </ResmonResult>\n";
-  return $rv;
+    my ($module, $service, $info) = @_;
+    my $rv = '';
+    $rv .= "  <ResmonResult module=\"$module\" service=\"$service\">\n";
+    $rv .= xml_kv_dump($info, 4);
+    $rv .= "  </ResmonResult>\n";
+    return $rv;
 }
 sub xml_escape {
-  my $v = shift;
-  $v =~ s/&/&amp;/g;
-  $v =~ s/</&lt;/g;
-  $v =~ s/>/&gt;/g;
-  $v =~ s/'/&apos;/g;
-  return $v;
+    my $v = shift;
+    $v =~ s/&/&amp;/g;
+    $v =~ s/</&lt;/g;
+    $v =~ s/>/&gt;/g;
+    $v =~ s/'/&apos;/g;
+    return $v;
 }
 sub dump_generic {
-  my $self = shift;
-  my $dumper = shift;
-  my $rv = '';
-  while(my ($module, $services) = each %{$self->{store}}) {
-    while(my ($service, $info) = each %$services) {
-      $rv .= $dumper->($module,$service,$info);
+    my $self = shift;
+    my $dumper = shift;
+    my $rv = '';
+    while(my ($module, $services) = each %{$self->{store}}) {
+        while(my ($service, $info) = each %$services) {
+            $rv .= $dumper->($module,$service,$info);
+        }
     }
-  }
-  return $rv;
+    return $rv;
 }
 sub dump_generic_module {
-  # Dumps a single module rather than all checks
-  my $self = shift;
-  my $dumper = shift;
-  my $module = shift;
-  my $rv = '';
-  my $services = $self->{store}->{$module};
-  while(my ($service, $info) = each %$services) {
-    $rv .= $dumper->($module,$service,$info);
-  }
-  return $rv;
+    # Dumps a single module rather than all checks
+    my $self = shift;
+    my $dumper = shift;
+    my $module = shift;
+    my $rv = '';
+    my $services = $self->{store}->{$module};
+    while(my ($service, $info) = each %$services) {
+        $rv .= $dumper->($module,$service,$info);
+    }
+    return $rv;
 }
 sub dump_generic_state {
-  # Dumps only checks with a specific state
-  my $self = shift;
-  my $dumper = shift;
-  my $state = shift;
-  my $rv = '';
-  while(my ($module, $services) = each %{$self->{store}}) {
-    while(my ($service, $info) = each %$services) {
-      if ($info->{state} eq $state) {
-        $rv .= $dumper->($module,$service,$info);
-      }
+    # Dumps only checks with a specific state
+    my $self = shift;
+    my $dumper = shift;
+    my $state = shift;
+    my $rv = '';
+    while(my ($module, $services) = each %{$self->{store}}) {
+        while(my ($service, $info) = each %$services) {
+            if ($info->{state} eq $state) {
+                $rv .= $dumper->($module,$service,$info);
+            }
+        }
     }
-  }
-  return $rv;
+    return $rv;
 }
 sub dump_oldstyle {
-  my $self = shift;
-  my $response = $self->dump_generic(sub {
-    my($module,$service,$info) = @_;
-    my $message = $info->{metric}->{message};
-    if (ref $message eq "ARRAY") {
-        $message = $message->[0];
-    }
-    return "$service($module) :: $info->{state}($message)\n";
-  });
-  return $response;
+    my $self = shift;
+    my $response = $self->dump_generic(sub {
+            my($module,$service,$info) = @_;
+            my $message = $info->{metric}->{message};
+            if (ref $message eq "ARRAY") {
+                $message = $message->[0];
+            }
+            return "$service($module) :: $info->{state}($message)\n";
+        });
+    return $response;
 }
 sub dump_xml {
-  my $self = shift;
-  my $response = <<EOF
+    my $self = shift;
+    my $response = <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>
 <ResmonResults>
 EOF
-  ; 
-  $response .= $self->dump_generic(\&xml_info);
-  $response .= "</ResmonResults>\n";
-  return $response;
+    ; 
+    $response .= $self->dump_generic(\&xml_info);
+    $response .= "</ResmonResults>\n";
+    return $response;
 }
 sub get_xsl() {
-  my $response = <<EOF
+    my $response = <<EOF
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -224,11 +224,11 @@ sub get_xsl() {
 </xsl:template>
 </xsl:stylesheet>
 EOF
-  ;
-  return $response;
+    ;
+    return $response;
 }
 sub get_css() {
-  my $response=<<EOF
+    my $response=<<EOF
 body {
     font-family: Verdana, Arial, helvetica, sans-serif;
 }
@@ -328,90 +328,87 @@ a.metrics:hover table {
     overflow: hidden;
 }
 EOF
-  ;
-  return $response;
+    ;
+    return $response;
 }
 sub service {
-  my $self = shift;
-  my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
-  my $state = $self->get_shared_state();
-  if ($self->{authuser} ne "" &&
+    my $self = shift;
+    my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
+    my $state = $self->get_shared_state();
+    if ($self->{authuser} ne "" &&
         ($authuser ne $self->{authuser} || $authpass ne $self->{authpass})) {
-      my $response = "<html><head><title>Password required</title></head>" .
+        my $response = "<html><head><title>Password required</title></head>" .
         "<body><h1>Password required</h1></body></html>";
-      $client->print(http_header(401, length($response), 'text/html', $snip,
-          "WWW-Authenticate: Basic realm=\"Resmon\"\n"));
-      $client->print($response . "\r\n");
-      return;
-  } elsif($req eq '/' or $req eq '/status') {
-    my $response .= $self->dump_xml();
-    $client->print(http_header(200, length($response), 'text/xml', $snip));
-    $client->print($response . "\r\n");
-    return;
-  } elsif($req eq '/status.txt') {
-    my $response = $self->dump_oldstyle();
-    $client->print(http_header(200, length($response), 'text/plain', $snip));
-    $client->print($response . "\r\n");
-    return;
-  } elsif($req eq '/resmon.xsl') {
-    my $response = $self->get_xsl();
-    $client->print(http_header(200, length($response), 'text/xml', $snip));
-    $client->print($response . "\r\n");
-    return;
-  } elsif($req eq '/resmon.css') {
-    my $response = $self->get_css();
-    $client->print(http_header(200, length($response), 'text/css', $snip));
-    $client->print($response . "\r\n");
-    return;
-  } elsif($req =~ /^\/([^\/]+)\/(.+)$/) {
-    if(exists($self->{store}->{$1}) &&
-        exists($self->{store}->{$1}->{$2})) {
-    my $info = $self->{store}->{$1}->{$2};
-    my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-    my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-    $response .= "<ResmonResults>\n".
-                    xml_info($1,$2,$info).
-                    "</ResmonResults>\n";
-    $client->print(http_header(200, length($response), 'text/xml', $snip));
-    $client->print( $response . "\r\n");
-    return;
+        $client->print(http_header(401, length($response), 'text/html', $snip,
+                "WWW-Authenticate: Basic realm=\"Resmon\"\n"));
+        $client->print($response . "\r\n");
+        return;
+    } elsif($req eq '/' or $req eq '/status') {
+        my $response .= $self->dump_xml();
+        $client->print(http_header(200, length($response), 'text/xml', $snip));
+        $client->print($response . "\r\n");
+        return;
+    } elsif($req eq '/status.txt') {
+        my $response = $self->dump_oldstyle();
+        $client->print(http_header(200, length($response), 'text/plain', $snip));
+        $client->print($response . "\r\n");
+        return;
+    } elsif($req eq '/resmon.xsl') {
+        my $response = $self->get_xsl();
+        $client->print(http_header(200, length($response), 'text/xml', $snip));
+        $client->print($response . "\r\n");
+        return;
+    } elsif($req eq '/resmon.css') {
+        my $response = $self->get_css();
+        $client->print(http_header(200, length($response), 'text/css', $snip));
+        $client->print($response . "\r\n");
+        return;
+    } elsif($req =~ /^\/([^\/]+)\/(.+)$/) {
+        if(exists($self->{store}->{$1}) &&
+            exists($self->{store}->{$1}->{$2})) {
+            my $info = $self->{store}->{$1}->{$2};
+            my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= "<ResmonResults>\n".
+            xml_info($1,$2,$info).
+            "</ResmonResults>\n";
+            $client->print(http_header(200, length($response), 'text/xml', $snip));
+            $client->print( $response . "\r\n");
+            return;
+        }
+    } elsif($req =~ /^\/([^\/]+)$/) {
+        if ($1 eq "BAD" || $1 eq "OK" || $1 eq "WARNING") {
+            my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= "<ResmonResults>\n".
+            $self->dump_generic_state(\&xml_info,$1) .
+            "</ResmonResults>\n";
+            $client->print(http_header(200, length($response), 'text/xml', $snip));
+            $client->print( $response . "\r\n");
+            return;
+        } elsif(exists($self->{store}->{$1})) {
+            my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
+            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= "<ResmonResults>\n".
+            $self->dump_generic_module(\&xml_info,$1) .
+            "</ResmonResults>\n";
+            $client->print(http_header(200, length($response), 'text/xml', $snip));
+            $client->print( $response . "\r\n");
+            return;
+        }
     }
-  } elsif($req =~ /^\/([^\/]+)$/) {
-    if ($1 eq "BAD" || $1 eq "OK" || $1 eq "WARNING") {
-      my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-      my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-      $response .= "<ResmonResults>\n".
-                      $self->dump_generic_state(\&xml_info,$1) .
-                      "</ResmonResults>\n";
-      $client->print(http_header(200, length($response), 'text/xml', $snip));
-      $client->print( $response . "\r\n");
-      return;
-    } elsif(exists($self->{store}->{$1})) {
-      my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-      my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-      $response .= "<ResmonResults>\n".
-                      $self->dump_generic_module(\&xml_info,$1) .
-                      "</ResmonResults>\n";
-      $client->print(http_header(200, length($response), 'text/xml', $snip));
-      $client->print( $response . "\r\n");
-      return;
-    }
-  }
-  die "Request not understood\n";
+    die "Request not understood\n";
 }
 sub http_header {
-  my $code = shift;
-  my $len = shift;
-  my $type = shift || 'text/xml';
-  my $close_connection = shift || 1;
-  my $extra_headers = shift;
-  return qq^HTTP/1.0 $code OK
-Server: resmon
-^ . (defined($len) ? "Content-length: $len\n" : "") .
+    my $code = shift;
+    my $len = shift;
+    my $type = shift || 'text/xml';
+    my $close_connection = shift || 1;
+    my $extra_headers = shift;
+    return "HTTP/1.0 $code OK\nServer: resmon\n" .
+        (defined($len) ? "Content-length: $len\n" : "") .
     (($close_connection || !$len) ? "Connection: close\n" : "") .
-qq^Content-Type: $type; charset=utf-8
-^ . $extra_headers . qq^
-^;
+    "Content-Type: $type; charset=utf-8\n" . $extra_headers . "\n";
 }
 sub base64_decode($) {
     # Base64 decoding for basic auth
@@ -421,154 +418,155 @@ sub base64_decode($) {
     if (length($enc) % 4 != 0) { return "" } # Length should be multiple of 4
     $enc =~ tr#A-Za-z0-9+/=##cd; # Ignore any invalid characters
     $enc =~ tr#A-Za-z0-9+/=# -_#d; # Convert base64 to uuencode alphabet and
-                                   # strip padding
+    # strip padding
     if (length($enc) > 63) { return "" }; # Only support up to 63 chars
-                                          # (one uuencoded line)
+    # (one uuencoded line)
     my $len = chr(32 + length($enc)*3/4); # uuencode has a length byte at the
-                                          # beginning
+    # beginning
     return unpack("u", $len.$enc);
 }
 sub serve_http_on {
-  my $self = shift;
-  my $ip = shift;
-  my $port = shift;
-  $self->{authuser} = shift;
-  $self->{authpass} = shift;
-  $ip = INADDR_ANY if(!defined($ip) || $ip eq '' || $ip eq '*');
-  $port ||= 81;
+    my $self = shift;
+    my $ip = shift;
+    my $port = shift;
+    $self->{authuser} = shift;
+    $self->{authpass} = shift;
+    $ip = INADDR_ANY if(!defined($ip) || $ip eq '' || $ip eq '*');
+    $port ||= 81;
 
-  my $handle = IO::Socket->new();
-  socket($handle, PF_INET, SOCK_STREAM, getprotobyname('tcp'))
+    my $handle = IO::Socket->new();
+    socket($handle, PF_INET, SOCK_STREAM, getprotobyname('tcp'))
     || die "socket: $!";
-  setsockopt($handle, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))
+    setsockopt($handle, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))
     || die "setsockopt: $!";
-  bind($handle, sockaddr_in($port, $ip))
+    bind($handle, sockaddr_in($port, $ip))
     || die "bind: $!";
-  listen($handle,SOMAXCONN);
+    listen($handle,SOMAXCONN);
 
-  $self->{zindex} = 0;
-  if (-x "/usr/sbin/zoneadm") {
-    open(Z, "/usr/sbin/zoneadm list -p |");
-    my $firstline = <Z>;
-    close(Z);
-    ($self->{zindex}) = split /:/, $firstline, 2;
-  }
-  $self->{http_port} = $port;
-  $self->{http_ip} = $ip;
-  $self->{ftok_number} = $port * (1 + $self->{zindex});
-
-  $self->{child} = fork();
-  if($self->{child} == 0) {
-    eval {
-      $SIG{'HUP'} = 'IGNORE';
-      $SIG{'PIPE'} = 'IGNORE';
-      while(my $client = $handle->accept) {
-        my $req;
-        my $proto;
-        my $close_connection;
-        my $authuser;
-        my $authpass;
-        local $SIG{ALRM} = sub { die "timeout\n" };
-        eval {
-          alarm($KEEPALIVE_TIMEOUT);
-          while(<$client>) {
-            alarm($REQUEST_TIMEOUT);
-            eval {
-              s/\r\n/\n/g;
-              chomp;
-              if(!$req) {
-                if(/^GET \s*(\S+)\s*?(?: HTTP\/(0\.9|1\.0|1\.1)\s*)?$/) {
-                  $req = $1;
-                  $proto = $2;
-                  # Protocol 1.1 and high are keep-alive by default
-                  $close_connection = ($proto <= 1.0)?1:0;
-                }
-                elsif(/./) {
-                  die "protocol deviations.\n";
-                }
-              }
-              else {
-                if(/^$/) {
-                  $self->service($client, $req, $proto, $close_connection,
-                    $authuser, $authpass);
-                  last if ($close_connection);
-                  alarm($KEEPALIVE_TIMEOUT);
-                  $req = undef;
-                  $proto = undef;
-                }
-                elsif(/^\S+\s*:\s*.{1,4096}$/) {
-                  # Valid request header... noop
-                  if(/^Connection: (\S+)/) {
-                    if(($proto <= 1.0 && lc($2) eq 'keep-alive') ||
-                       ($proto == 1.1 && lc($2) ne 'close')) {
-                      $close_connection = 0;
-                    }
-                  }
-                  if(/^Authorization: Basic (\S+)/) {
-                      my $dec = base64_decode($1);
-                      ($authuser, $authpass) = split /:/, $dec, 2
-                  }
-                }
-                else {
-                  die "protocol deviations.\n";
-                }
-              }
-            };
-            if($@) {
-              print $client http_header(500, 0, 'text/plain', 1);
-              print $client "$@\r\n";
-              last;
-            }
-          }
-          alarm(0);
-        };
-        alarm(0) if($@);
-        $client->close();
-      }
-    };
-    if($@) {
-      print STDERR "Error in listener: $@\n";
+    $self->{zindex} = 0;
+    if (-x "/usr/sbin/zoneadm") {
+        open(Z, "/usr/sbin/zoneadm list -p |");
+        my $firstline = <Z>;
+        close(Z);
+        ($self->{zindex}) = split /:/, $firstline, 2;
     }
-    exit(0);
-  }
-  close($handle);
-  return;
+    $self->{http_port} = $port;
+    $self->{http_ip} = $ip;
+    $self->{ftok_number} = $port * (1 + $self->{zindex});
+
+    $self->{child} = fork();
+    if($self->{child} == 0) {
+        eval {
+            $SIG{'HUP'} = 'IGNORE';
+            $SIG{'PIPE'} = 'IGNORE';
+            while(my $client = $handle->accept) {
+                my $req;
+                my $proto;
+                my $close_connection;
+                my $authuser;
+                my $authpass;
+                local $SIG{ALRM} = sub { die "timeout\n" };
+                eval {
+                    alarm($KEEPALIVE_TIMEOUT);
+                    while(<$client>) {
+                        alarm($REQUEST_TIMEOUT);
+                        eval {
+                            s/\r\n/\n/g;
+                            chomp;
+                            if(!$req) {
+                                if(/^GET \s*(\S+)\s*?(?: HTTP\/(0\.9|1\.0|1\.1)\s*)?$/) {
+                                    $req = $1;
+                                    $proto = $2;
+                                    # Protocol 1.1 and high are keep-alive by
+                                    # default
+                                    $close_connection = ($proto <= 1.0)?1:0;
+                                }
+                                elsif(/./) {
+                                    die "protocol deviations.\n";
+                                }
+                            }
+                            else {
+                                if(/^$/) {
+                                    $self->service($client, $req, $proto, $close_connection,
+                                        $authuser, $authpass);
+                                    last if ($close_connection);
+                                    alarm($KEEPALIVE_TIMEOUT);
+                                    $req = undef;
+                                    $proto = undef;
+                                }
+                                elsif(/^\S+\s*:\s*.{1,4096}$/) {
+                                    # Valid request header... noop
+                                    if(/^Connection: (\S+)/) {
+                                        if(($proto <= 1.0 && lc($2) eq 'keep-alive') ||
+                                            ($proto == 1.1 && lc($2) ne 'close')) {
+                                            $close_connection = 0;
+                                        }
+                                    }
+                                    if(/^Authorization: Basic (\S+)/) {
+                                        my $dec = base64_decode($1);
+                                        ($authuser, $authpass) = split /:/, $dec, 2
+                                    }
+                                }
+                                else {
+                                    die "protocol deviations.\n";
+                                }
+                            }
+                        };
+                        if($@) {
+                            print $client http_header(500, 0, 'text/plain', 1);
+                            print $client "$@\r\n";
+                            last;
+                        }
+                    }
+                    alarm(0);
+                };
+                alarm(0) if($@);
+                $client->close();
+            }
+        };
+        if($@) {
+            print STDERR "Error in listener: $@\n";
+        }
+        exit(0);
+    }
+    close($handle);
+    return;
 }
 sub open {
-  my $self = shift;
-  return 0 unless(ref $self);
-  return 1 if($self->{handle});  # Alread open
-  if($self->{file} eq '-' || !defined($self->{file})) {
-    $self->{handle_is_stdout} = 1;
-    $self->{handle} = IO::File->new_from_fd(fileno(STDOUT), "w");
-    return 1;
-  }
-  $self->{handle} = IO::File->new("> $self->{file}.swap");
-  die "open $self->{file}.swap failed: $!\n" unless($self->{handle});
-  $self->{swap_on_close} = 1; # move this to a non .swap version on close
-  chmod 0644, "$self->{file}.swap";
+    my $self = shift;
+    return 0 unless(ref $self);
+    return 1 if($self->{handle});  # Alread open
+    if($self->{file} eq '-' || !defined($self->{file})) {
+        $self->{handle_is_stdout} = 1;
+        $self->{handle} = IO::File->new_from_fd(fileno(STDOUT), "w");
+        return 1;
+    }
+    $self->{handle} = IO::File->new("> $self->{file}.swap");
+    die "open $self->{file}.swap failed: $!\n" unless($self->{handle});
+    $self->{swap_on_close} = 1; # move this to a non .swap version on close
+    chmod 0644, "$self->{file}.swap";
 
-  unless(defined($self->{shared_state})) {
-    $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
-                                   IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
-    die "$0: $!" if($self->{shared_state} == -1);
-  }
-  return 1;
+    unless(defined($self->{shared_state})) {
+        $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
+            IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
+        die "$0: $!" if($self->{shared_state} == -1);
+    }
+    return 1;
 }
 sub store {
-  my ($self, $type, $name, $info) = @_;
-  %{$self->{store}->{$type}->{$name}} = %$info;
-  $self->{store}->{$type}->{$name}->{last_update} = time;
-  $self->store_shared_state();
-  my $message = $info->{metric}->{message};
-  if (ref $message eq "ARRAY") {
-    $message = $message->[0];
-  }
-  if($self->{handle}) {
-    $self->{handle}->print("$name($type) :: $info->{state}($message)\n");
-  } else {
-    print "$name($type) :: $info->{state}($message)\n";
-  }
+    my ($self, $type, $name, $info) = @_;
+    %{$self->{store}->{$type}->{$name}} = %$info;
+    $self->{store}->{$type}->{$name}->{last_update} = time;
+    $self->store_shared_state();
+    my $message = $info->{metric}->{message};
+    if (ref $message eq "ARRAY") {
+        $message = $message->[0];
+    }
+    if($self->{handle}) {
+        $self->{handle}->print("$name($type) :: $info->{state}($message)\n");
+    } else {
+        print "$name($type) :: $info->{state}($message)\n";
+    }
 }
 sub purge {
     # This removes status information for modules that are no longer loaded
@@ -607,28 +605,28 @@ sub purge {
     }
 }
 sub close {
-  my $self = shift;
-  return if($self->{handle_is_stdout});
-  $self->{handle}->close() if($self->{handle});
-  $self->{handle} = undef;
-  if($self->{swap_on_close}) {
-    unlink("$self->{file}");
-    link("$self->{file}.swap", $self->{file});
-    unlink("$self->{file}.swap");
-    delete($self->{swap_on_close});
-  }
+    my $self = shift;
+    return if($self->{handle_is_stdout});
+    $self->{handle}->close() if($self->{handle});
+    $self->{handle} = undef;
+    if($self->{swap_on_close}) {
+        unlink("$self->{file}");
+        link("$self->{file}.swap", $self->{file});
+        unlink("$self->{file}.swap");
+        delete($self->{swap_on_close});
+    }
 }
 sub DESTROY {
-  my $self = shift;
-  my $child = $self->{child};
-  if($child) {
-    kill 15, $child;
-    sleep 1;
-    kill 9, $child if(kill 0, $child);
-    waitpid(-1,WNOHANG);
-  }
-  if(defined($self->{shared_state})) {
-    shmctl($self->{shared_state}, IPC_RMID, 0);
-  }
+    my $self = shift;
+    my $child = $self->{child};
+    if($child) {
+        kill 15, $child;
+        sleep 1;
+        kill 9, $child if(kill 0, $child);
+        waitpid(-1,WNOHANG);
+    }
+    if(defined($self->{shared_state})) {
+        shmctl($self->{shared_state}, IPC_RMID, 0);
+    }
 }
 1;

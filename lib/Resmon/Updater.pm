@@ -101,8 +101,8 @@ sub get_resmon_status {
 
     my $host = "127.0.0.1";
     my $handle = IO::Socket::INET->new(Proto     => "tcp",
-                                    PeerAddr  => $host,
-                                    PeerPort  => $port);
+        PeerAddr  => $host,
+        PeerPort  => $port);
     if (!$handle) {
         print STDERR "can't connect to port $port on $host: $!";
         return 0;
@@ -160,15 +160,15 @@ sub reload_resmon {
 }
 
 sub track_mod_times {
-  my $mtime = (stat $_)[9];
-  return unless -f $_;
-  return if /\/\.svn$/ || /\/\.svn\//;
-  if($assess == 0) {
-    $times{$_} = $mtime;
-  } else {
-    $newfiles++ unless(exists($times{$_}));
-    $changedfiles++ if(exists($times{$_}) and ($times{$_} != $mtime));
-  }
+    my $mtime = (stat $_)[9];
+    return unless -f $_;
+    return if /\/\.svn$/ || /\/\.svn\//;
+    if($assess == 0) {
+        $times{$_} = $mtime;
+    } else {
+        $newfiles++ unless(exists($times{$_}));
+        $changedfiles++ if(exists($times{$_}) and ($times{$_} != $mtime));
+    }
 }
 
 1;

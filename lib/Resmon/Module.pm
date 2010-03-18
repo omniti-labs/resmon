@@ -9,80 +9,81 @@ my %coderefs;
 my $rmloading = "Registering";
 
 sub fetch_monitor {
-  my $type = shift;
-  my $coderef = $coderefs{$type};
-  return $coderef if ($coderef);
+    my $type = shift;
+    my $coderef = $coderefs{$type};
+    return $coderef if ($coderef);
 
-  # First if the monitor name is raw and looks right:
-  #   is a subclass of Resmon::Module and can 'handler'
-  # then we will promote it into the Resmon::Module namespace
-  # and use this one.
-  eval "use $type;";
-  if($type->isa(__PACKAGE__) && $type->can('handler')) {
-    eval " 
-      package Resmon::Module::$type;
-      use vars qw/\@ISA/;
-      \@ISA = qw($type);
-      1;
-    ";
-    if($@) {
-      die "Could not repackage $type as Resmon::Module::$type\n";
+    # First if the monitor name is raw and looks right:
+    #   is a subclass of Resmon::Module and can 'handler'
+    # then we will promote it into the Resmon::Module namespace
+    # and use this one.
+    eval "use $type;";
+    if($type->isa(__PACKAGE__) && $type->can('handler')) {
+        eval " 
+        package Resmon::Module::$type;
+        use vars qw/\@ISA/;
+        \@ISA = qw($type);
+        1;
+        ";
+        if($@) {
+            die "Could not repackage $type as Resmon::Module::$type\n";
+        }
+        return undef;
     }
+    eval "use Resmon::Module::$type;";
     return undef;
-  }
-  eval "use Resmon::Module::$type;";
-  return undef;
 }
 
 sub register_monitor {
-  my ($type, $ref) = @_;
-  if(ref $ref eq 'CODE') {
-    $coderefs{$type} = $ref;
-  }
-  print STDERR "$rmloading $type monitor\n";
+    my ($type, $ref) = @_;
+    if(ref $ref eq 'CODE') {
+        $coderefs{$type} = $ref;
+    }
+    print STDERR "$rmloading $type monitor\n";
 }
 
 sub fresh_status {
-  my $arg = shift;
-  print STDERR $arg->{type} . ": Warning: fresh_status() is deprecated, and no longer required.\n";
-  return undef;
+    my $arg = shift;
+    print STDERR $arg->{type} .
+        ": Warning: fresh_status() is deprecated, and no longer required.\n";
+    return undef;
 }
 
 sub fresh_status_msg {
-  # Deal with result caching if an 'interval' entry is placed in the config
-  # for that module
-  my $arg = shift;
-  return undef unless $arg->{interval};
-  my $now = time;
-  if(($arg->{lastupdate} + $arg->{interval}) >= $now) {
-    return $arg->{laststatus}, $arg->{lastmessage};
-  }
-  return undef;
+    # Deal with result caching if an 'interval' entry is placed in the config
+    # for that module
+    my $arg = shift;
+    return undef unless $arg->{interval};
+    my $now = time;
+    if(($arg->{lastupdate} + $arg->{interval}) >= $now) {
+        return $arg->{laststatus}, $arg->{lastmessage};
+    }
+    return undef;
 }
 
 sub set_status {
-  my $arg = shift;
-  $arg->{laststatus} = shift;
-  $arg->{lastmessage} = shift;
-  $arg->{lastupdate} = time;
-  if($arg->{laststatus} =~ /^([A-Z]+)\((.*)\)$/s) {
-    # This handles old-style modules that return just set status as
-    #     STATE(message)
-    $arg->{laststatus} = $1;
-    $arg->{lastmessage} = $2;
-  }
-  return ($arg->{laststatus}, $arg->{lastmessage});
+    my $arg = shift;
+    $arg->{laststatus} = shift;
+    $arg->{lastmessage} = shift;
+    $arg->{lastupdate} = time;
+    if($arg->{laststatus} =~ /^([A-Z]+)\((.*)\)$/s) {
+        # This handles old-style modules that return just set status as
+        #     STATE(message)
+        $arg->{laststatus} = $1;
+        $arg->{lastmessage} = $2;
+    }
+    return ($arg->{laststatus}, $arg->{lastmessage});
 }
 sub config_as_hash {
-  my $self = shift;
-  my $conf = {};
-  while(my ($key, $value) = each %$self) {
-    if(! ref $value) {
-      # only stash scalars here.
-      $conf->{$key} = $value;
+    my $self = shift;
+    my $conf = {};
+    while(my ($key, $value) = each %$self) {
+        if(! ref $value) {
+            # only stash scalars here.
+            $conf->{$key} = $value;
+        }
     }
-  }
-  return $conf;
+    return $conf;
 }
 
 sub reload_module {

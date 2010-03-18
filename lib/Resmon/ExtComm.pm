@@ -12,17 +12,17 @@ my %commcache;
 my %children;
 
 sub cache_command($$;$) {
-  my ($command, $expiry, $timeout) = @_;
-  $timeout ||= $expiry;
+    my ($command, $expiry, $timeout) = @_;
+    $timeout ||= $expiry;
 
-  my $now = time;
-  if($commhist{$command}>$now) {
+    my $now = time;
+    if($commhist{$command}>$now) {
+        return $commcache{$command};
+    }
+    # TODO: timeouts
+    $commcache{$command} = run_cmd($command);
+    $commhist{$command} = $now + $expiry;
     return $commcache{$command};
-  }
-  # TODO: timeouts
-  $commcache{$command} = run_cmd($command);
-  $commhist{$command} = $now + $expiry;
-  return $commcache{$command};
 }
 
 sub clean_up {
