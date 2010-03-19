@@ -460,10 +460,9 @@ sub serve_http_on {
 sub open {
     my $self = shift;
     return 0 unless(ref $self);
-    return 1 if($self->{handle});  # Alread open
+    return 1 if($self->{handle});  # Already open
     if($self->{file} eq '-' || !defined($self->{file})) {
-        $self->{handle_is_stdout} = 1;
-        $self->{handle} = IO::File->new_from_fd(fileno(STDOUT), "w");
+        # We'll use stdout instead - no file handle needed
         return 1;
     }
     $self->{handle} = IO::File->new("> $self->{file}.swap");
@@ -483,15 +482,22 @@ sub store {
     %{$self->{store}->{$type}->{$name}} = %$info;
     $self->{store}->{$type}->{$name}->{last_update} = time;
     $self->store_shared_state();
-    my $message = $info->{metric}->{message};
-    if (ref $message eq "ARRAY") {
-        $message = $message->[0];
+}
+sub write {
+    # Writes the metrics output for a single check to stdout and/or a file
+    my ($self, $module_name, $check_name, $metrics, $debug) = @_;
+    my $metrics_output = "$module_name`$check_name\n";
+    while (my ($k, $v) = each (%$metrics)) {
+        if (ref($v) eq "ARRAY") {
+            $v = $v->[0];
+        }
+        $metrics_output .= "    $k = $v\n";
     }
-    # TODO - print metrics here insead of message
     if($self->{handle}) {
-        $self->{handle}->print("$name($type) :: $message\n");
-    } else {
-        print "$name($type) :: $message\n";
+        $self->{handle}->print($metrics_output);
+    }
+    if (!$self->{handle} || $debug) {
+        print $metrics_output;
     }
 }
 sub purge {
@@ -532,7 +538,6 @@ sub purge {
 }
 sub close {
     my $self = shift;
-    return if($self->{handle_is_stdout});
     $self->{handle}->close() if($self->{handle});
     $self->{handle} = undef;
     if($self->{swap_on_close}) {
