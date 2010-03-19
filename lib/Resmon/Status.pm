@@ -7,7 +7,7 @@ use IO::File;
 use IO::Socket;
 use Socket;
 use Fcntl qw/:flock/;
-use IPC::SysV qw /IPC_PRIVATE IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
+use IPC::SysV qw /IPC_PRIVATE IPC_CREAT IPC_RMID S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
 
 my $SEGSIZE = 1024*256;
@@ -376,16 +376,8 @@ sub serve_http_on {
     || die "bind: $!";
     listen($handle,SOMAXCONN);
 
-    $self->{zindex} = 0;
-    if (-x "/usr/sbin/zoneadm") {
-        open(Z, "/usr/sbin/zoneadm list -p |");
-        my $firstline = <Z>;
-        close(Z);
-        ($self->{zindex}) = split /:/, $firstline, 2;
-    }
     $self->{http_port} = $port;
     $self->{http_ip} = $ip;
-    $self->{ftok_number} = $port * (1 + $self->{zindex});
 
     $self->{child} = fork();
     if($self->{child} == 0) {
