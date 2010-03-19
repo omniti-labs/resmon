@@ -142,9 +142,6 @@ sub get_xsl() {
     <link rel="stylesheet" type="text/css" href="/resmon.css" />
 </head>
 <body>
-    <ul class="navbar">
-        <li><a href="/">List all checks</a></li>
-    </ul>
     <p>
     Total checks:
     <xsl:value-of select="count(ResmonResult)" />
@@ -242,20 +239,6 @@ td {
 
 a {
     text-decoration: none;
-}
-
-ul.navbar {
-    list-style: none;
-    font-size: 80%;
-}
-
-ul.navbar li {
-    display: inline;
-    padding-left: 1em;
-    padding-right: 1em;
-    margin-right: -1px;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
 }
 
 a.metrics, a.metrics:visited {
