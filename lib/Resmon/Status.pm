@@ -369,11 +369,11 @@ sub serve_http_on {
 
     my $handle = IO::Socket->new();
     socket($handle, PF_INET, SOCK_STREAM, getprotobyname('tcp'))
-    || die "socket: $!";
+        || die "socket: $!";
     setsockopt($handle, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))
-    || die "setsockopt: $!";
+        || die "setsockopt: $!";
     bind($handle, sockaddr_in($port, $ip))
-    || die "bind: $!";
+        || die "bind: $!";
     listen($handle,SOMAXCONN);
 
     $self->{http_port} = $port;
