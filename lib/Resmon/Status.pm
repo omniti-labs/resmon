@@ -492,7 +492,7 @@ sub purge {
     while (my ($type, $mods) = each(%{$config->{Module}}) ) {
         $loaded{$type} = ();
         foreach (@$mods) {
-            $loaded{$type}{$_->{'object'}} = 1;
+            $loaded{$type}{$_->{'check_name'}} = 1;
         }
     }
 

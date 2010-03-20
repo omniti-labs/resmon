@@ -17,7 +17,6 @@ $status $update);
 use Resmon::Config;
 use Resmon::ExtComm;
 use Resmon::Status;
-use Resmon::Module;
 
 GetOptions(
     "i=s" => \$interface,
@@ -123,29 +122,23 @@ if($config->{port});
 
 while(1) {
     while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
-        my $coderef = undef;
-        eval { $coderef = Resmon::Module::fetch_monitor($module_name); };
-        foreach my $monobj (@$mod_configs) {
-            my $check_metric = 'no data';
+        foreach my $monitor_obj (@$mod_configs) {
+            my $check_metric = {};
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired
-            my $check_metric = Resmon::Module::fresh_status_msg($monobj);
+            my $check_metric = $monitor_obj->get_cached_metrics();
             # Otherwise, run the check
             if (!$check_metric) {
-                my $timeout = $monobj->{'check_timeout'} ||
+                my $timeout = $monitor_obj->{'check_timeout'} ||
                     $config->{'timeout'};
                 alarm($timeout);
                 eval {
                     local $SIG{ALRM} = sub { die "alarm\n" };
-                    if($coderef) {
-                        $check_metric = $coderef->($monobj);
-                    } else {
-                        $check_metric = $monobj->handler();
-                    }
+                    $check_metric = $monitor_obj->handler();
                 };
                 alarm 0;
                 # Store the last metrics for use by fresh_status_msg later
-                Resmon::Module::cache_metrics($monobj, $check_metric);
+                $monitor_obj->cache_metrics($check_metric);
             };
             my $checkproblem = $@;
             my $results = {
@@ -161,8 +154,8 @@ while(1) {
                     Resmon::ExtComm::clean_up;
                 }
             }
-            $status->store($module_name,$monobj->{'object'}, $results);
-            $status->write($module_name,$monobj->{'object'},
+            $status->store($module_name,$monitor_obj->{'check_name'}, $results);
+            $status->write($module_name,$monitor_obj->{'check_name'},
                 $results->{'metric'}, $debug);
         }
     }

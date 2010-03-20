@@ -21,32 +21,26 @@ sub new {
         next if /^\s*$/;
         if($current) {
             if(/^\s*([^:\s](?:[^:]*[^:\s])?)\s*:\s*(.+)\s*$/) {
-                my %kvs;
-                $kvs{'type'} = $current;
-                $kvs{'object'} = $1;
+                my $kvs = {};
+                my $check_name = $1;
                 my @params = split(/,/, $2);
-                grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
+                grep { $kvs->{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
                     @params;
-                my $object = bless \%kvs, "Resmon::Module::$current";
-                push(@{$self->{Module}->{$current}}, $object);
-
-                # Test to make sure the module actually works
-                my $coderef;
-                eval { $coderef = Resmon::Module::fetch_monitor($current); };
-                if (!$coderef) {
-                    # Try to execute the config_as_hash method. If it fails,
-                    # then the module didn't load properly (e.g. syntax
-                    # error).
-                    eval { $object->config_as_hash; };
-                    if ($@) {
-                        # Module failed to load, print error and add to failed
-                        # modules list.
-                        print STDERR "Problem loading module $current\n";
-                        print STDERR "This module will not be available\n";
-                        $self->{'modstatus'} .= "$current ";
-                    }
+                my $object;
+                eval "use $current;
+                    \$object = $current->new(\$check_name, \$kvs);";
+                if ($@) {
+                    print STDERR "Problem loading monitor $current:\n";
+                    print STDERR "$@\n";
+                    print STDERR "This module will not be available\n";
+                    next;
                 }
-
+                if (!$object->isa("Resmon::Module")) {
+                    print STDERR "Module $current isn't of type ";
+                    print STDERR "Resmon::Module. This monitor will not be ";
+                    print STDERR "available\n";
+                }
+                push(@{$self->{Module}->{$current}}, $object);
             } elsif (/^\s*\}\s*$/) {
                 $current = undef;
             } else {
