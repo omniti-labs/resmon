@@ -9,6 +9,25 @@ use vars ('@ISA');
 
 use Sys::Hostname;
 
+sub new {
+    my $class = shift;
+    my $self = $class->SUPER::new();
+
+    # Get the svn revision
+    my $svnversion = 'svnversion';
+    if (defined($self->{config}->{svnversion_path})) {
+        $svnversion = $self->{config}->{svnversion_path};
+    }
+    $self->{svn_revision} = `$svnversion`;
+    if ($self->{svn_revision} eq "") {
+        $self->svn_revision = "unknown";
+    }
+    chomp $self->{svn_revision};
+
+    bless($self, $class);
+    return $self;
+}
+
 sub handler {
     my $self = shift;
 
@@ -17,18 +36,11 @@ sub handler {
     my $configstatus = $config->{'configstatus'};
     my $modstatus = $config->{'modstatus'};
 
-    ## Current revision
-    my $revision = '$Revision$';
-    my ($numeric_revision) = $revision =~ /([0-9]+)/;
-    if (!defined($numeric_revision)) {
-        $numeric_revision = "unknown";
-    }
-
     # The hostname command croaks (dies) if it fails, hence the eval
     my $hostname = eval { hostname } || "Unknown";
 
     return {
-        "revision" => [$numeric_revision, "s"],
+        "revision" => [$self->{svn_revision}, "s"],
         "hostname" => [$hostname, "s"],
         "configstatus" => [$configstatus ? "BAD" : "OK", "s"],
         "modstatus" => [$modstatus ? "BAD" : "OK", "s"]
