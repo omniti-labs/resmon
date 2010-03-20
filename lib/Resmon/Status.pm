@@ -483,42 +483,6 @@ sub write {
         print $metrics_output;
     }
 }
-sub purge {
-    # This removes status information for modules that are no longer loaded
-
-    # Generate list of current modules
-    my %loaded = ();
-    my ($self, $config) = @_;
-    while (my ($type, $mods) = each(%{$config->{Module}}) ) {
-        $loaded{$type} = ();
-        foreach (@$mods) {
-            $loaded{$type}{$_->{'check_name'}} = 1;
-        }
-    }
-
-    # Debugging
-    #while (my ($key, $value) = each(%loaded) ) {
-    #    print STDERR "$key: ";
-    #    while (my ($mod, $dummy) = each (%$value) ) {
-    #        print STDERR "$mod ";
-    #    }
-    #    print "\n";
-    #}
-
-    # Compare $self->{store} with list of loaded modules
-    while (my ($type, $value) = each (%{$self->{store}})) {
-        while (my ($name, $value2) = each (%$value)) {
-            if (!exists($loaded{$type}) || !exists($loaded{$type}{$name})) {
-                #print STDERR "$type $name\n";
-                delete $self->{store}->{$type}->{$name};
-                if (scalar(keys %{$self->{store}->{$type}}) == 0) {
-                    #print STDERR "$type has no more objects, deleting\n";
-                    delete $self->{store}->{$type};
-                }
-            }
-        }
-    }
-}
 sub close {
     my $self = shift;
     $self->{handle}->close() if($self->{handle});

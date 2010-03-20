@@ -43,44 +43,6 @@ sub configure {
     $config->{interface} = $interface if($interface);
 }
 
-sub reconfigure {
-    my $modstatus = "";
-    print STDERR "Reloading modules...\n";
-    my $modules = $config->{Module};
-    while ( my ($key, $value) = each(%$modules) ) {
-        my $mod = $value->[0]; # Only need the first of each module
-        # Called this way rather than $mod->reload_module() in order to deal
-        # with modules that failed to load on startup and won't have a
-        # reload_module method.
-        my $errs = Resmon::Module::reload_module($mod);
-        if ($errs) {
-            my $modname = ref($mod) || $mod;
-            $modname =~ s/Resmon::Module:://;
-            $modstatus .= "$modname ";
-            print STDERR " Failed to reload module $modname\n";
-            print STDERR $errs;
-            print STDERR " This module is no longer available.\n";
-        }
-    }
-    print STDERR "Reloading configuration...\n";
-    eval { configure(); };
-    if ($@) {
-        # The config object is recreated every time we reload, so we shouldn't
-        # need to reset this BAD value to empty on a successful load.
-        $config->{'configstatus'} = "BAD";
-        print STDERR " Failed to reload: ";
-        print STDERR $@;
-        print STDERR " Continuing with old configuration\n";
-    }
-
-    $config->{'modstatus'} = $modstatus;
-    $status->purge($config);
-}
-
-my $sighup = 0;
-sub sighup_handler { $sighup = 1; }
-$SIG{'HUP'} = \&sighup_handler;
-
 configure();
 
 my $sigint = 0;
@@ -161,14 +123,9 @@ while(1) {
     }
     $status->close();
     die "Exiting.\n" if($sigint);
-    if ($sighup) {
-        $sighup = 0;
-        reconfigure();
-    } else {
-        reap_zombies();
-        wait_interval();
-        reap_zombies();
-    }
+    reap_zombies();
+    wait_interval();
+    reap_zombies();
     die "Exiting.\n" if($sigint);
     print "\n---- ".localtime(time)."----------\n"
     unless $status->open();
