@@ -10,8 +10,8 @@ use vars ('@ISA');
 use Sys::Hostname;
 
 sub new {
-    my $class = shift;
-    my $self = $class->SUPER::new();
+    my ($class, $check_name, $config) = @_;
+    my $self = $class->SUPER::new($check_name, $config);
 
     # Get the svn revision
     my $svnversion = 'svnversion';
