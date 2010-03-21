@@ -52,6 +52,13 @@ sub new {
         } else {
             if(/\s*(\S+)\s*\{/) {
                 $current = $1;
+
+                # Delete the module from %INC if it exists. This will reload
+                # any module if needed.
+                my $mod_filename = "$current.pm";
+                $mod_filename =~ s/::/\//g;
+                delete $INC{$mod_filename};
+
                 eval "use $current;";
                 if ($@) {
                     print STDERR "Problem loading monitor $current:\n";

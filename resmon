@@ -45,6 +45,10 @@ sub configure {
 
 configure();
 
+my $sighup = 0;
+sub sighup_handler { $sighup = 1; }
+$SIG{'HUP'} = \&sighup_handler;
+
 my $sigint = 0;
 sub sigint_handler { $sigint = 1; }
 $SIG{'INT'} = \&sigint_handler;
@@ -123,9 +127,16 @@ while(1) {
     }
     $status->close();
     die "Exiting.\n" if($sigint);
-    reap_zombies();
-    wait_interval();
-    reap_zombies();
+    if ($sighup) {
+        # Reload configuration (and modules) on SIGHUP
+        $sighup = 0;
+        print STDERR "Reloading modules\n";
+        $config = Resmon::Config->new($config_file);
+    } else {
+        reap_zombies();
+        wait_interval();
+        reap_zombies();
+    }
     die "Exiting.\n" if($sigint);
     print "\n---- ".localtime(time)."----------\n"
     unless $status->open();
