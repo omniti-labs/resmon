@@ -95,6 +95,7 @@ sub handler {
     # This is an example of running an external command. There are much better
     # ways to get the current date.
     my $date = `date +%d`;
+    chomp $date;
 
     return {
         "check_name" => [$self->{check_name}, "s"],
