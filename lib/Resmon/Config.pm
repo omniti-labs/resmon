@@ -7,7 +7,7 @@ sub new {
     my $filename = shift;
     my $self = bless {
         configfile => $filename,
-        modstatus => '',
+        modstatus => [],
         # Defaults
         timeout => 10
     }, $class;
@@ -21,24 +21,27 @@ sub new {
         next if /^\s*$/;
         if($current) {
             if(/^\s*([^:\s](?:[^:]*[^:\s])?)\s*:\s*(.+)\s*$/) {
+                next if $current eq "BAD_MODULE";
                 my $kvs = {};
                 my $check_name = $1;
                 my @params = split(/,/, $2);
                 grep { $kvs->{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
                     @params;
                 my $object;
-                eval "use $current;
-                    \$object = $current->new(\$check_name, \$kvs);";
+                eval "\$object = $current->new(\$check_name, \$kvs);";
                 if ($@) {
-                    print STDERR "Problem loading monitor $current:\n";
+                    print STDERR "Problem with check $current\`$check_name:\n";
                     print STDERR "$@\n";
-                    print STDERR "This module will not be available\n";
+                    print STDERR "This check will not be available\n";
+                    push @{$self->{modstatus}}, "$current`$check_name";
                     next;
                 }
                 if (!$object->isa("Resmon::Module")) {
                     print STDERR "Module $current isn't of type ";
-                    print STDERR "Resmon::Module. This monitor will not be ";
-                    print STDERR "available\n";
+                    print STDERR "Resmon::Module. Check $current`$check_name ";
+                    print STDERR "will not be available\n";
+                    push @{$self->{modstatus}}, "$current`$check_name";
+                    next;
                 }
                 push(@{$self->{Module}->{$current}}, $object);
             } elsif (/^\s*\}\s*$/) {
@@ -49,6 +52,15 @@ sub new {
         } else {
             if(/\s*(\S+)\s*\{/) {
                 $current = $1;
+                eval "use $current;";
+                if ($@) {
+                    print STDERR "Problem loading monitor $current:\n";
+                    print STDERR "$@\n";
+                    print STDERR "This module will not be available\n";
+                    push @{$self->{modstatus}}, $current;
+                    $current = "BAD_MODULE";
+                    next;
+                }
                 $self->{Module}->{$current} = [];
                 next;
             }

@@ -43,7 +43,8 @@ sub handler {
         "revision" => [$self->{svn_revision}, "s"],
         "hostname" => [$hostname, "s"],
         "configstatus" => [$configstatus ? "BAD" : "OK", "s"],
-        "modstatus" => [$modstatus ? "BAD" : "OK", "s"]
+        "modstatus" => [$modstatus ? "BAD" : "OK", "s"],
+        "failed_modules" => [join(", ", @$modstatus), "s"]
     };
 };
 
