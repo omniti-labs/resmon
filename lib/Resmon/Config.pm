@@ -1,6 +1,7 @@
 package Resmon::Config;
 
 use strict;
+use warnings;
 
 sub new {
     my $class = shift;

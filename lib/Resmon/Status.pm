@@ -1,6 +1,7 @@
 package Resmon::Status;
 
 use strict;
+use warnings;
 use POSIX qw/:sys_wait_h/;
 use IO::Handle;
 use IO::File;
@@ -293,7 +294,7 @@ sub service {
             exists($self->{store}->{$1}->{$2})) {
             my $info = $self->{store}->{$1}->{$2};
             my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
             $response .= "<ResmonResults>\n".
             xml_info($1,$2,$info).
             "</ResmonResults>\n";
@@ -304,7 +305,7 @@ sub service {
     } elsif($req =~ /^\/([^\/]+)$/) {
         if(exists($self->{store}->{$1})) {
             my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
             $response .= "<ResmonResults>\n".
             $self->dump_generic_module(\&xml_info,$1) .
             "</ResmonResults>\n";

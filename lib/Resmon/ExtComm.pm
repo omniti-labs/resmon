@@ -1,6 +1,7 @@
 package Resmon::ExtComm;
 
 use strict;
+use warnings;
 require Exporter;
 use vars qw/@ISA @EXPORT/;
 

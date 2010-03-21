@@ -1,5 +1,6 @@
 package Resmon::Module;
 use strict;
+use warnings;
 
 sub new {
     my ($class, $check_name, $config) = @_;

@@ -7,6 +7,7 @@ BEGIN {
 };
 
 use strict;
+use warnings;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
 use POSIX qw( :sys_wait_h setsid );
 use Getopt::Long;
@@ -92,7 +93,7 @@ while(1) {
             my $check_metric = {};
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired
-            my $check_metric = $monitor_obj->get_cached_metrics();
+            $check_metric = $monitor_obj->get_cached_metrics();
             # Otherwise, run the check
             if (!$check_metric) {
                 my $timeout = $monitor_obj->{'check_timeout'} ||
