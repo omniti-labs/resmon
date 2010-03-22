@@ -133,6 +133,9 @@ while(1) {
         $sighup = 0;
         print STDERR "Reloading modules\n";
         $config = Resmon::Config->new($config_file);
+        # Needed to ensure any removed modules do not continue to show in the
+        # web interface
+        $status->clear();
     } else {
         reap_zombies();
         wait_interval();

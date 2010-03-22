@@ -467,6 +467,12 @@ sub store {
     $self->{store}->{$type}->{$name}->{last_update} = time;
     $self->store_shared_state();
 }
+sub clear {
+    # Clear all state after a reload
+    my $self = shift;
+    $self->{store} = {};
+    $self->store_shared_state;
+}
 sub write {
     # Writes the metrics output for a single check to stdout and/or a file
     my ($self, $module_name, $check_name, $metrics, $debug) = @_;
