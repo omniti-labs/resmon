@@ -3,9 +3,7 @@ package Resmon::Module::Sample;
 use strict;
 use warnings;
 
-use Resmon::Module;
-use vars ('@ISA');
-@ISA = ("Resmon::Module");
+use base 'Resmon::Module';
 
 =pod
 

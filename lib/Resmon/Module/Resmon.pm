@@ -3,9 +3,7 @@ package Resmon::Module::Resmon;
 use strict;
 use warnings;
 
-use Resmon::Module;
-use vars ('@ISA');
-@ISA = ("Resmon::Module");
+use base 'Resmon::Module';
 
 use Sys::Hostname;
 
