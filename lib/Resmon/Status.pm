@@ -266,7 +266,7 @@ sub service {
     my $self = shift;
     my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
     my $state = $self->get_shared_state();
-    if ($self->{authuser} ne "" &&
+    if (defined($self->{authuser}) && $self->{authuser} ne "" &&
         ($authuser ne $self->{authuser} || $authpass ne $self->{authpass})) {
         my $response = "<html><head><title>Password required</title></head>" .
         "<body><h1>Password required</h1></body></html>";
@@ -321,7 +321,7 @@ sub http_header {
     my $len = shift;
     my $type = shift || 'text/xml';
     my $close_connection = shift || 1;
-    my $extra_headers = shift;
+    my $extra_headers = shift || "";
     return "HTTP/1.0 $code OK\nServer: resmon\n" .
         (defined($len) ? "Content-length: $len\n" : "") .
     (($close_connection || !$len) ? "Connection: close\n" : "") .
