@@ -173,6 +173,7 @@ eval {
         } else {
             $state = "CRITICAL";
         }
+        print "$state: $value\n";
     }
 
     if ($warning || $critical) {
