@@ -5,6 +5,8 @@ use warnings;
 
 use base 'Resmon::Module';
 
+use Resmon::ExtComm qw(run_command cache_command);
+
 =pod
 
 =head1 NAME
@@ -92,8 +94,15 @@ sub handler {
 
     # This is an example of running an external command. There are much better
     # ways to get the current date.
-    my $date = `date +%d`;
+    my $date = run_command('date +%d');
     chomp $date;
+
+    # Another example of running an external command:
+    # This command caches the output for 600 seconds. You should probably
+    # rely on the check interval rather than cache_command unless you have
+    # the same command being run on multiple checks.
+
+    # my $output = cache_command('some_command', 600);
 
     return {
         "check_name" => [$self->{check_name}, "s"],
