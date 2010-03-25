@@ -2,33 +2,29 @@ package Resmon::ExtComm;
 
 use strict;
 use warnings;
-require Exporter;
-use vars qw/@ISA @EXPORT/;
 
-@ISA = qw/Exporter/;
-@EXPORT = qw/cache_command run_cmd/;
+use base "Exporter";
+our @EXPORT_OK = qw/cache_command run_command/;
 
 my %commhist;
 my %commcache;
 my %children;
 
 sub cache_command($$;$) {
-    my ($command, $expiry, $timeout) = @_;
-    $timeout ||= $expiry;
+    my ($command, $expiry) = @_;
 
     my $now = time;
     if($commhist{$command}>$now) {
         return $commcache{$command};
     }
-    # TODO: timeouts
-    $commcache{$command} = run_cmd($command);
+    $commcache{$command} = run_command($command);
     $commhist{$command} = $now + $expiry;
     return $commcache{$command};
 }
 
 sub clean_up {
-    # Kill off any child processes started by run_cmd and close any pipes to
-    # them. This is called when a check times out and we may have processes
+    # Kill off any child processes started by run_command and close any pipes
+    # to them. This is called when a check times out and we may have processes
     # left over.
     while (my ($pid, $handle) = each %children) {
         kill 9, $pid;
@@ -37,7 +33,7 @@ sub clean_up {
     }
 }
 
-sub run_cmd {
+sub run_command {
     # Run a command just like `cmd`, but store the pid and stdout handles so
     # they can be cleaned up later. For use with alarm().
     my $cmd = shift;
