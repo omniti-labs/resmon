@@ -1,4 +1,4 @@
-package Resmon::Module::Sample;
+package Core::Sample;
 
 use strict;
 use warnings;
