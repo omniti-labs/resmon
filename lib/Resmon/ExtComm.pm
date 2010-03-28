@@ -10,7 +10,7 @@ my %commhist;
 my %commcache;
 my %children;
 
-sub cache_command($$;$) {
+sub cache_command($$) {
     my ($command, $expiry) = @_;
 
     my $now = time;
@@ -33,7 +33,7 @@ sub clean_up {
     }
 }
 
-sub run_command {
+sub run_command($) {
     # Run a command just like `cmd`, but store the pid and stdout handles so
     # they can be cleaned up later. For use with alarm().
     my $cmd = shift;
