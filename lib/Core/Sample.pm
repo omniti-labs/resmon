@@ -11,11 +11,11 @@ use Resmon::ExtComm qw(run_command cache_command);
 
 =head1 NAME
 
-Resmon::Module::Sample - a sample/template resmon module
+Core::Sample - a sample/template resmon module
 
 =head1 SYNOPSIS
 
- Resmon::Module::Sample {
+ Core::Sample {
      some_check_name: arg1 => foo, arg2 => bar
  }
 
