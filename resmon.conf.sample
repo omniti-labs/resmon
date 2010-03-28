@@ -5,44 +5,45 @@ TIMEOUT 10;
 
 # Resmon health check. Shows the hostname, svn revision, and any problems with
 # modules or the configuration file.
-RESMON {
+Core::Resmon {
   resmon : noop
 }
-LOGFILE {
-  # Oracle alert file (look for ORA- lines)
-  /usr/app/oracle/admin/DWP1/bdump/alert_QLP1.log : match => ORA-
-}
-TCPSERVICE {
-  ssh : host => 127.0.0.1, port => 22, timeout => 2
-}
-NETSTAT {
-  oracle-listener    : localport => 1521, state => LISTEN, atleast => 1
-  www1-dbconnections : localport => 1521, remoteip => 10.0.0.81, atleast => 2, limit => 50
-  www2-dbconnections : localport => 1521, remoteip => 10.0.0.82, atleast => 2, limit => 50
-  www3-dbconnections : localport => 1521, remoteip => 10.0.0.83, atleast => 2, limit => 50
-  www4-dbconnections : localport => 1521, remoteip => 10.0.0.84, atleast => 2, limit => 50
-  www5-dbconnections : localport => 1521, remoteip => 10.0.0.85, atleast => 2, limit => 50
-}
-A1000 {
-  fa000_001				: status => Optimal
-  ag028_003				: status => Optimal
-  fd032_002				: status => Optimal
-}
-DISK {
-  /data1				: limit => 95%, warnat => 70%
-  /data2				: limit => 95%, warnat => 70%
-  /data3				: limit => 95%, warnat => 70%
-  /data/oradata/QLP2/statspack01	: limit => 95%
-  /data/oradata/QLP2/redo01		: limit => 95%
-  /data/oradata/QLP2/redo03		: limit => 95%
-  /data/oradata/QLP2/redo04		: limit => 95%
-  /data/oradata/QLP2/tools01		: limit => 95%
-  /data/oradata/QLP2/redo02		: limit => 95%
-  /data/oradata/QLP2/users01		: limit => 95%
-  /data/oradata/QLP2/temp01		: limit => 95%
-  /data/oradata/QLP2/data01		: limit => 95%
-  /data/oradata/QLP2/index01		: limit => 95%
-  /data/oradata/QLP2/system01		: limit => 95%
-  /data/oradata/QLP2/arch01		: limit => 95%
-  /data/oradata/QLP2/rbs01		: limit => 95%
-}
+# The following checks are old style resmon and need updating
+#LOGFILE {
+#  # Oracle alert file (look for ORA- lines)
+#  /usr/app/oracle/admin/DWP1/bdump/alert_QLP1.log : match => ORA-
+#}
+#TCPSERVICE {
+#  ssh : host => 127.0.0.1, port => 22, timeout => 2
+#}
+#NETSTAT {
+#  oracle-listener    : localport => 1521, state => LISTEN, atleast => 1
+#  www1-dbconnections : localport => 1521, remoteip => 10.0.0.81, atleast => 2, limit => 50
+#  www2-dbconnections : localport => 1521, remoteip => 10.0.0.82, atleast => 2, limit => 50
+#  www3-dbconnections : localport => 1521, remoteip => 10.0.0.83, atleast => 2, limit => 50
+#  www4-dbconnections : localport => 1521, remoteip => 10.0.0.84, atleast => 2, limit => 50
+#  www5-dbconnections : localport => 1521, remoteip => 10.0.0.85, atleast => 2, limit => 50
+#}
+#A1000 {
+#  fa000_001				: status => Optimal
+#  ag028_003				: status => Optimal
+#  fd032_002				: status => Optimal
+#}
+#DISK {
+#  /data1				: limit => 95%, warnat => 70%
+#  /data2				: limit => 95%, warnat => 70%
+#  /data3				: limit => 95%, warnat => 70%
+#  /data/oradata/QLP2/statspack01	: limit => 95%
+#  /data/oradata/QLP2/redo01		: limit => 95%
+#  /data/oradata/QLP2/redo03		: limit => 95%
+#  /data/oradata/QLP2/redo04		: limit => 95%
+#  /data/oradata/QLP2/tools01		: limit => 95%
+#  /data/oradata/QLP2/redo02		: limit => 95%
+#  /data/oradata/QLP2/users01		: limit => 95%
+#  /data/oradata/QLP2/temp01		: limit => 95%
+#  /data/oradata/QLP2/data01		: limit => 95%
+#  /data/oradata/QLP2/index01		: limit => 95%
+#  /data/oradata/QLP2/system01		: limit => 95%
+#  /data/oradata/QLP2/arch01		: limit => 95%
+#  /data/oradata/QLP2/rbs01		: limit => 95%
+#}
