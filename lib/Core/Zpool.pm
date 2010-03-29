@@ -16,6 +16,10 @@ Core::Zpool - monitor zfs zpool health
 =head1 SYNOPSIS
 
  Core::Zpool {
+     zpools: noop
+ }
+
+ Core::Zpool {
      zpools: zpool_path = '/sbin/zpool'
  }
 
