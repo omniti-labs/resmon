@@ -5,7 +5,7 @@ use Resmon::Module;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 @ISA = qw/Resmon::Module/;
-my $DEBUG=1;
+my $DEBUG=0;
 
 
 sub handler {
@@ -34,7 +34,7 @@ sub handler {
   } if ($temp && ($temp < $critical));
 
   return "BAD", {
-    message => "$temp $units $sensor@$chip",
+    message => "$temp $units $sensor\@$chip",
     temp => [$temp, "i"],
   };
 };
