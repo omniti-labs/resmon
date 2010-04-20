@@ -46,12 +46,26 @@ our @EXPORT_OK = qw/cache_command run_command/;
 
 sub cache_command($$) {
     my $command = shift;
-    return `$command`;
+    run_command($command);
 }
 
-sub run_command($) {
-    my $command = shift;
-    return `$command`;
+sub run_command {
+    my @cmd = @_;
+    pipe(my ($r, $w));
+    my $pid = fork();
+    if($pid) {
+        close($w);
+        my @lines = <$r>;
+        waitpid($pid, 0);
+        return join("", @lines);
+    } else {
+        eval {
+            open(STDOUT, ">&", $w);
+            close($r);
+            exec(@cmd);
+        };
+        exit();
+    }
 }
 
 1;
