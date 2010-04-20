@@ -40,7 +40,7 @@ this one to measure free space.
 =item check_name
 
 The name of the check refers to the filesystem to check the free space on. It
-should specify the mountpoint of the filesystem and not the device.
+can specify either the mountpoint or the device for the filesystem.
 
 =item dfcmd
 
@@ -89,7 +89,7 @@ sub handler {
     my $fs = $self->{check_name};
     my $dfcmd = $config->{dfcmd} || $self->{default_dfcmd};
 
-    my $output = cache_command("$dfcmd $fs", 120);
+    my $output = run_command("$dfcmd $fs");
     my ($line) = grep(/$fs\s*/, split(/\n/, $output));
     if($line =~ /(\d+)\s+(\d+)\s+(\d+)%/) {
         return {
