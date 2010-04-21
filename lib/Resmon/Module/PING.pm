@@ -12,7 +12,7 @@ sub handler {
   my $limit = $arg->{'limit'} || "200";
   switch ($^O) {
       case 'solaris' {
-          $pingcmd = "ping -s $host 56 1"}
+          $pingcmd = "ping -sn $host 56 1"}
       else {
           $pingcmd = "ping -c 1 $host"}
   }
