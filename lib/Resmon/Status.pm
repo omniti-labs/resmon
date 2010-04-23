@@ -363,6 +363,7 @@ sub serve_http_on {
     $self->{http_port} = $port;
     $self->{http_ip} = $ip;
 
+    $self->{parent_pid} = $$;
     $self->{child} = fork();
     if($self->{child} == 0) {
         eval {
@@ -503,8 +504,10 @@ sub close {
 }
 sub DESTROY {
     my $self = shift;
+    # Make sure we're really the parent process
+    return if ($self->{parent_pid} != $$);
     my $child = $self->{child};
-    if($child) {
+    if ($child) {
         kill 15, $child;
         sleep 1;
         kill 9, $child if(kill 0, $child);
