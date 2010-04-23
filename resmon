@@ -114,12 +114,12 @@ while(1) {
                 metric => $check_metric
             };
             if($checkproblem) {
-                $results->{metric} = { "message" =>
-                    "Bad module or problem running handler code."};
-                if ($checkproblem eq "alarm\n") {
-                    $results->{metric} = { "message" => "Check timeout"};
-                    Resmon::ExtComm::clean_up;
+                chomp $checkproblem;
+                $results->{metric} = { "error" => ["$checkproblem", "s"]};
+                if ($checkproblem eq "alarm") {
+                    $results->{metric} = { "error" => ["Check timeout", "s"]};
                 }
+                Resmon::ExtComm::clean_up;
             }
             $status->store($module_name,$monitor_obj->{'check_name'}, $results);
             $status->write($module_name,$monitor_obj->{'check_name'},

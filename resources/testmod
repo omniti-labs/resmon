@@ -87,7 +87,13 @@ if ($@) {
     exit 1;
 }
 my $obj = $module->new($check_name, $kvs);
-my $metrics = $obj->handler();
+my $metrics;
+eval { $metrics = $obj->handler(); };
+if ($@) {
+    chomp $@;
+    $metrics = { "error" => ["$@", "s"] };
+}
+
 print "$module $check_name\n\n";
 for my $k (sort keys %$metrics) {
     my $v = $metrics->{$k};
