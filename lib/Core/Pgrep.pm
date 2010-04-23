@@ -74,11 +74,7 @@ sub handler {
     my $full = $config->{full} ? "f" : "";
 
     my $count = run_command("$pgrep_path", "-c$full", "$config->{pattern}");
-    if (!defined($count)) {
-        return {
-            "error" => ["Unable to run pgrep command", "s"]
-        }
-    }
+    die "Unable to run pgrep command\n" if (!defined($count));
     chomp $count;
 
     if ($count =~ /^\d+$/) {
@@ -88,9 +84,7 @@ sub handler {
     } else {
         # We didn't get a count as expected. This can happen if you didn't
         # provide a pattern or something else went wrong.
-        return {
-            "error" => ["Pgrep gave unexpected output: $count", "s"]
-        };
+        die "Pgrep gave unexpected output: $count\n";
     };
 };
 

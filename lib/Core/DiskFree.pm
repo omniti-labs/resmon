@@ -99,9 +99,7 @@ sub handler {
         };
     } else {
         # We couldn't get the free space
-        return {
-            "error" => ["Unable to get free space", "s"]
-        }
+        die "Unable to get free space\n";
     }
 };
 

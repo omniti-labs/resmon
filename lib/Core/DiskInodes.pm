@@ -117,9 +117,7 @@ sub handler {
         };
     } else {
         # We couldn't match the output line
-        return {
-            "error" => ["Unable to get free inode count", "s"]
-        }
+        die "Unable to get free inode count\n";
     }
 };
 
