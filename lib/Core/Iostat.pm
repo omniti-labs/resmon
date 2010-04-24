@@ -96,6 +96,18 @@ Number of hard errors.
 
 Number of transport errors.
 
+=item kb_xfrd
+
+Kilobytes transferred.
+
+=item disk_xfrs
+
+Disk transfers.
+
+=item busy_sec
+
+Seconds spent in disk activity.
+
 =back
 
 =cut
@@ -125,6 +137,17 @@ sub handler {
                 'hard_errors' => [$11, 'i'],
                 'txport_errors' => [$12, 'i'],
                 'total_errors' => [$13, 'i']
+            };
+        } else {
+            die "Unable to find disk: $disk\n";
+        }
+    } elsif ($osname eq 'openbsd') {
+        my $output = run_command("$iostat_path -D -I $disk");
+        if ($output =~ /\s+$disk\s+\n\s+KB xfr time\s+\n\s+(\d+)\s+(\d+)\s+(\S+).*/) {
+            return {
+                'kb_xfrd' => [$1, 'i'],
+                'disk_xfrs' => [$2, 'i'],
+                'busy_sec' => [$3, 'i']
             };
         } else {
             die "Unable to find disk: $disk\n";
