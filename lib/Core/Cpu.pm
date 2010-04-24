@@ -16,7 +16,7 @@ Core::Cpu - check CPU usage
 =head1 SYNOPSIS
 
  Core::Cpu {
-    local : path_to_vmstat => /usr/bin/vmstat
+    local : vmstat_path => /usr/bin/vmstat
  }
 
 =head1 DESCRIPTION
@@ -31,11 +31,11 @@ This module retrieves CPU statistics.
 
 Arbitrary name of the check.
 
-=item path_to_vmstat
+=item vmstat_path
 
 Optional path to the vmstat executable.
 
-=item path_to_tail
+=item tail_path
 
 Optional path to the tail executable.
 
@@ -51,8 +51,6 @@ Optional path to the tail executable.
 
 =item idle (time)
 
-=item error_msg
-
 =back
 
 =cut
@@ -60,9 +58,9 @@ Optional path to the tail executable.
 sub handler {
     my $self = shift;
     my $config = $self->{'config'};
-    my $path_to_vmstat = $config->{'path_to_vmstat'} || 'vmstat';
-    my $path_to_tail = $config->{'path_to_tail'} || 'tail';
-    my $output = run_command("$path_to_vmstat 1 2 | $path_to_tail -1");
+    my $vmstat_path = $config->{'vmstat_path'} || 'vmstat';
+    my $tail_path = $config->{'tail_path'} || 'tail';
+    my $output = run_command("$vmstat_path 1 2 | $tail_path -1");
     my $osname = $^O;
     my %metrics;
     my @keys = qw( user system idle );
@@ -79,7 +77,7 @@ sub handler {
     } elsif ($osname eq 'freebsd') {
         @values = (split($output))[16..18];
     } else {
-        return { 'error_msg' => 'unknown operating system' };
+        die "Unknown platform: $osname";
     }
 
     %metrics = map { $_ => shift(@values) } @keys;
