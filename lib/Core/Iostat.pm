@@ -48,11 +48,11 @@ Provide an alternate path to the iostat command (optional).
 
 =over
 
-=item read_sec
+=item reads_sec
 
 Reads per second.
 
-=item write_sec
+=item writes_sec
 
 Writes per second.
 
@@ -108,6 +108,10 @@ Disk transfers.
 
 Seconds spent in disk activity.
 
+=item xfrs_sec
+
+Disk transfers per second.
+
 =back
 
 =cut
@@ -124,8 +128,8 @@ sub handler {
         my ($line) = grep(/$disk\s*/, split(/\n/, $output));
         if ($line =~ /$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/) {
             return {
-                'read_sec' => [$1, 'i'],
-                'write_sec' => [$2, 'i'],
+                'reads_sec' => [$1, 'i'],
+                'writes_sec' => [$2, 'i'],
                 'kb_read_sec' => [$3, 'i'],
                 'kb_write_sec' => [$4, 'i'],
                 'wait_txn' => [$5, 'i'],
@@ -137,6 +141,18 @@ sub handler {
                 'hard_errors' => [$11, 'i'],
                 'txport_errors' => [$12, 'i'],
                 'total_errors' => [$13, 'i']
+            };
+        } else {
+            die "Unable to find disk: $disk\n";
+        }
+    } elsif ($osname eq 'linux') {
+        my $output = run_command("$iostat_path $disk");
+        my ($line) = grep(/$disk\s*/, split(/\n/, $output));
+        if ($line =~ /^$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+).*/) {
+            return {
+                'xfrs_sec' => [$1, 'i'],
+                'reads_sec' => [$2, 'i'],
+                'writes_sec' => [$3, 'i']
             };
         } else {
             die "Unable to find disk: $disk\n";
