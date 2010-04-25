@@ -111,7 +111,7 @@ sub handler {
         }
         close(MEMINFO);
         return \%metrics;
-    } elsif ($osname eq 'openbsd') {
+    } elsif ($osname eq 'openbsd' || $osname eq 'freebsd') {
         my $output = run_command("$vmstat_path");
         if ($output =~ /.*cs\s+us\s+sy\s+id\n\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*/) {
             return {
