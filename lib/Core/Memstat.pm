@@ -62,6 +62,12 @@ module falls back on the standard vmstat collection method.
 
 Linux configurations use /proc/meminfo for memory statistics.
 
+=head1 SYSCTL METRICS
+
+FreeBSD configurations use sysctl to extract the most common memory
+statistics.  With the exception of hw.physmem, all metrics are pulled
+from the vm.stats.vm branch.
+
 =back
 
 =cut
@@ -104,14 +110,26 @@ sub handler {
         }
     } elsif ($osname eq 'linux') {
         my %metrics;
-        open(MEMINFO, '/proc/meminfo') || die "Unable to read: /proc/meminfo\n";
+        open(MEMINFO, '/proc/meminfo') || die "Unable to read proc: $!\n";
         while (<MEMINFO>) {
             /(\w+)\:\s+(\d+).*/;
             $metrics{$1} = [$2, 'i'];
         }
         close(MEMINFO);
         return \%metrics;
-    } elsif ($osname eq 'openbsd' || $osname eq 'freebsd') {
+    } elsif ($osname eq 'freebsd') {
+        my %metrics;
+        open(SYSCTL, 'sysctl hw.physmem vm.stats.vm |') || die "Unable to read sysctl: $!\n";
+        while (<SYSCTL>) {
+            /(.*)\:\s+(\d+).*/;
+            $metrics{$1} = [$2, 'i'];
+        }
+        for my $page qw( cache inactive active wire free page ) {
+            $metrics{"vm.stats.vm.v_${page}_count"}->[0] *= ($metrics{'vm.stats.vm.v_page_size'}->[0] / 1024);
+        }
+        close(SYSCTL);
+        return \%metrics;
+    } elsif ($osname eq 'openbsd') {
         my $output = run_command("$vmstat_path");
         if ($output =~ /.*cs\s+us\s+sy\s+id\n\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*/) {
             return {
