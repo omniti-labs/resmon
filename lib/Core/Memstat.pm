@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use base 'Resmon::Module';
+use Data::Dumper;
 
 use Resmon::ExtComm qw(run_command cache_command);
 
@@ -57,6 +58,10 @@ Perl Sun::Solaris::Kstat library is locally available, this module will
 prefer that method first, bypassing vmstat collection.  Otherwise, this
 module falls back on the standard vmstat collection method.
 
+=head1 PROC METRICS
+
+Linux configurations use /proc/meminfo for memory statistics.
+
 =back
 
 =cut
@@ -97,6 +102,15 @@ sub handler {
                 die "Unable to extract statistics\n";
             }
         }
+    } elsif ($osname eq 'linux') {
+        my %metrics;
+        open(MEMINFO, '/proc/meminfo') || die "Unable to read: /proc/meminfo\n";
+        while (<MEMINFO>) {
+            /(\w+)\:\s+(\d+).*/;
+            $metrics{$1} = [$2, 'i'];
+        }
+        close(MEMINFO);
+        return \%metrics;
     } elsif ($osname eq 'openbsd') {
         my $output = run_command("$vmstat_path");
         if ($output =~ /.*cs\s+us\s+sy\s+id\n\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*/) {
