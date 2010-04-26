@@ -102,15 +102,15 @@ Number of transport errors.
 
 =item kb_xfrd
 
-Kilobytes transferred.
+Kilobytes transferred (counter).
 
 =item disk_xfrs
 
-Disk transfers.
+Disk transfers (counter).
 
 =item busy_sec
 
-Seconds spent in disk activity.
+Seconds spent in disk activity (counter).
 
 =item xfrs_sec
 
