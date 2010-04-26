@@ -39,6 +39,8 @@ respective vmstat command.
 The check name is used for descriptive purposes only.  It is not used
 for anything functional.
 
+=back
+
 =head1 METRICS
 
 =over
@@ -50,6 +52,8 @@ Active virtual pages.
 =item free_mem
 
 Free real memory.
+
+=back
 
 =head1 KSTAT METRICS
 
@@ -67,8 +71,6 @@ Linux configurations use /proc/meminfo for memory statistics.
 FreeBSD configurations use sysctl to extract the most common memory
 statistics.  With the exception of hw.physmem, all metrics are pulled
 from the vm.stats.vm branch.
-
-=back
 
 =cut
 

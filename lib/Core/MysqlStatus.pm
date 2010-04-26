@@ -48,13 +48,9 @@ The password to connect with.
 
 =head1 METRICS
 
-=over
-
 This check returns a significant number of metrics.  There are too many to go
 into detail here.  For more information, refer to the MySQL developer
 documentation at http://dev.mysql.com/doc/.
-
-=back
 
 =cut
 
