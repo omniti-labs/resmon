@@ -43,6 +43,13 @@ for anything functional.
 
 =head1 METRICS
 
+The metrics returned by this module vary by OS and method used:
+
+=head2 VMSTAT METRICS
+
+The default/fallback method used is vmstat, which returns the following
+metrics:
+
 =over
 
 =item actv_mem
@@ -55,18 +62,18 @@ Free real memory.
 
 =back
 
-=head1 KSTAT METRICS
+=head2 KSTAT METRICS
 
 Solaris provides an interface to numerous kernel statistics.  If the
 Perl Sun::Solaris::Kstat library is locally available, this module will
 prefer that method first, bypassing vmstat collection.  Otherwise, this
 module falls back on the standard vmstat collection method.
 
-=head1 PROC METRICS
+=head2 PROC METRICS
 
 Linux configurations use /proc/meminfo for memory statistics.
 
-=head1 SYSCTL METRICS
+=head2 SYSCTL METRICS
 
 FreeBSD configurations use sysctl to extract the most common memory
 statistics.  With the exception of hw.physmem, all metrics are pulled
