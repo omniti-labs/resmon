@@ -95,6 +95,8 @@ sub handler {
     foreach my $line (split /\n/, $output) {
         my ($name, $used, $uunit, $free, $funit) = $line =~
             /(\S+)\s+([0-9.]+)([BKMGTPEZ]?)\s+([0-9.]+)([BKMGTPEZ]?)/;
+        # Make sure we were able to match the regex
+        die "Unable to parse zfs command output: $line\n" unless defined($name);
         next if ($name =~ /\//); # We're only interested in the root of a pool
 
         # Convert human readable units to bytes
