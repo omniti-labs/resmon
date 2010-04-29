@@ -35,6 +35,10 @@ where zpool list does not report the true usable free space (e.g. raidz
 pools). See http://www.cuddletech.com/blog/pivot/entry.php?id=1013 for another
 case where zpool list does not report the correct values for monitoring.
 
+Zpool list is still used to get the list of pools on the system, and then zfs
+list is run individually for each pool. This is done to improve performance in
+the case where there are many filesystems.
+
 =head1 CONFIGURATION
 
 =over
@@ -46,6 +50,10 @@ The check name is descriptive only in this check. It is not used for anything.
 =item zfs_path
 
 Specify an alternative location for the zfs command. Default: /sbin/zfs.
+
+=item zpool_path
+
+Specify an alternative location for the zpool command. Default: /sbin/zpool.
 
 =back
 
@@ -90,13 +98,19 @@ sub handler {
     my $self = shift;
     my $config = $self->{config}; # All configuration is in here
     my $zfs_command = $config->{zfs_command} || "/sbin/zfs";
+    my $zpool_command = $config->{zpool_command} || "/sbin/zpool";
     my $status = {};
-    my $output = run_command("$zfs_command list -H -o name,used,avail");
-    foreach my $line (split /\n/, $output) {
-        my ($name, $used, $uunit, $free, $funit) = $line =~
+    my $output = run_command("$zpool_command list -H -o name");
+    foreach my $pool (split /\n/, $output) {
+        # Sanity check in case zpool outputs something strange
+        die "Invalid pool name: $pool" if $pool !~ /[a-zA-Z0-9_.-]+/;
+        my $zfs_output = run_command(
+            "$zfs_command list -H -o name,used,avail $pool");
+        my ($name, $used, $uunit, $free, $funit) = $zfs_output =~
             /(\S+)\s+([0-9.]+)([BKMGTPEZ]?)\s+([0-9.]+)([BKMGTPEZ]?)/;
         # Make sure we were able to match the regex
-        die "Unable to parse zfs command output: $line\n" unless defined($name);
+        die "Unable to parse zfs command output: $zfs_output\n"
+            unless defined($name);
         next if ($name =~ /\//); # We're only interested in the root of a pool
 
         # Convert human readable units to bytes
