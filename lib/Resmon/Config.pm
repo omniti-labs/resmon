@@ -3,20 +3,25 @@ package Resmon::Config;
 use strict;
 use warnings;
 
+use Sys::Hostname;
+
 sub new {
     my $class = shift;
     my $filename = shift;
-    my $self = bless {
+    my $self = shift; # Allows calling this recursively - you can pass in self
+    $self ||= bless {
         configfile => $filename,
         modstatus => [],
         # Defaults
         timeout => 10
     }, $class;
-    open(CONF, "<$filename") || return undef;
+    my $conf;
+    open($conf, "<$filename") ||
+        die "Unable to open configuration file $filename";
 
     my $current;
     my $line = 0;
-    while(<CONF>) {
+    while(<$conf>) {
         $line++;
         next if /^\s*#/;
         next if /^\s*$/;
@@ -103,9 +108,14 @@ sub new {
             elsif(/\S*AUTHPASS\s+(\S+)\s*;\s*/) {
                 $self->{authpass} = $1;
                 next;
-            }
-            else {
-                die "Syntax Error on line $line\n";
+            } elsif(/\s*INCLUDE\s+(\S+)\s*;\s*/) {
+                my $incfilename = $1;
+                my $HOSTNAME = hostname; # Uses Sys::Hostname
+                $incfilename =~ s/%h/$HOSTNAME/g;
+                $incfilename =~ s/%o/$^O/g;
+                new($class, $incfilename, $self);
+            } else {
+                die "Syntax Error in config file $filename on line $line\n";
             }
         }
     }
