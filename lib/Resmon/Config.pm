@@ -101,11 +101,11 @@ sub new {
                 $self->{timeout} = $1;
                 next;
             }
-            elsif(/\S*AUTHUSER\s+(\S+)\s*;\s*/) {
+            elsif(/\s*AUTHUSER\s+(\S+)\s*;\s*/) {
                 $self->{authuser} = $1;
                 next;
             }
-            elsif(/\S*AUTHPASS\s+(\S+)\s*;\s*/) {
+            elsif(/\s*AUTHPASS\s+(\S+)\s*;\s*/) {
                 $self->{authpass} = $1;
                 next;
             } elsif(/\s*INCLUDE\s+(\S+)\s*;\s*/) {
