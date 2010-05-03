@@ -80,6 +80,7 @@ sub handler {
         } else {
             # We have kstat, use that for everything
             my $pagesize = run_cmd("pagesize");
+            $kstat->update();
             my $syspages = $kstat->{unix}->{0}->{system_pages};
             $total_mem = $syspages->{physmem} * $pagesize / 1024 / 1024;
             $free_mem  = $syspages->{freemem} * $pagesize / 1024 / 1024;
