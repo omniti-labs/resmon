@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use base 'Resmon::Module';
-use Data::Dumper;
 
 use Resmon::ExtComm qw(run_command cache_command);
 
@@ -38,6 +37,10 @@ respective vmstat command.
 
 The check name is used for descriptive purposes only.  It is not used
 for anything functional.
+
+=item vmstat_path
+
+Provide an alternate path to the vmstat command (optional).
 
 =back
 
