@@ -1,5 +1,6 @@
 package Resmon::Module::ZFSYNCHECK;
 use strict;
+use POSIX;
 use Resmon::ExtComm qw/cache_command/;
 use vars qw/@ISA/;
 use Time::Local;
@@ -16,10 +17,10 @@ sub handler {
       sleep(1);
     }
     else {
-      return "BAD ($ZFSQUERY hanged)";
+      return "BAD($ZFSQUERY hanged)";
     }
   }
-  my $recentsnap = cache_command("$ZFSQUERY| grep '^$zfs\@' | head -1", 300);
+  my $recentsnap = cache_command("$ZFSQUERY| grep '^$zfs\@' | head -1", 120);
   return "BAD(no snapshot of $zfs)" if not $recentsnap;
   $ZFSQUERY="/usr/sbin/zfs get -H -p -ovalue creation $recentsnap";
   while (`pgrep -f "^$ZFSQUERY"`) {
@@ -27,17 +28,17 @@ sub handler {
       sleep(1);
     }
     else {
-      return "BAD ($ZFSQUERY hanged)";
+      return "BAD($ZFSQUERY hanged)";
     }
   }
-  my $snaptime = cache_command($ZFSQUERY, 300);
+  my $snaptime = cache_command($ZFSQUERY, 120);
   my $snapage=time()-$snaptime;
   if($snapage < $age) {
     return "OK($snapage < $age)";
   }elsif ($snapage >= $age){
     return "BAD($snapage >= $age)";
   }
-  return "BAD(for snapshot $recentsnap we have unexpected creation $snaptime)";
+  return "BAD($snaptime: for snapshot $recentsnap we have unexpected creation)";
 };
 1;
 
