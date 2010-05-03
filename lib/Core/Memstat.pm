@@ -7,6 +7,17 @@ use base 'Resmon::Module';
 
 use Resmon::ExtComm qw(run_command cache_command);
 
+my $osname = $^O;
+my $usekstat = 0;
+my $kstat;
+if ($osname eq 'solaris') {
+    eval "use Sun::Solaris::Kstat";
+    unless ($@) {
+        $usekstat = 1;
+        $kstat = Sun::Solaris::Kstat->new();
+    }
+}
+
 =pod
 
 =head1 NAME
@@ -89,19 +100,12 @@ sub handler {
     my $disk = $self->{'check_name'};
     my $config = $self->{'config'};
     my $vmstat_path = $config->{'vmstat_path'} || 'vmstat';
-    my $osname = $^O;
 
     if ($osname eq 'solaris') {
-        my $usekstat = 0;
         my $pagesize = run_command('pagesize');
-        my $kstat;
-        eval "use Sun::Solaris::Kstat";
-        unless ($@) {
-            $usekstat = 1;
-            $kstat = Sun::Solaris::Kstat->new();
-        }
         if ($usekstat && $pagesize) {
             my %metrics;
+            $kstat->update();
             my $syspages = $kstat->{'unix'}->{0}->{'system_pages'};
 
             foreach (keys %$syspages) {
