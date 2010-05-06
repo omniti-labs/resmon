@@ -1,4 +1,4 @@
-package Core::PfStatus;
+package Core::Pf::Status;
 
 use strict;
 use warnings;
@@ -12,11 +12,11 @@ use Data::Dumper;
 
 =head1 NAME
 
-Core::PfStatus - gather statistics from PF firewalls
+Core::Pf::Status - gather statistics from PF firewalls
 
 =head1 SYNOPSIS
 
- Core::PfStatus {
+ Core::Pf::Status {
     local : pfctl_path => /sbin/pfctl
  }
 
