@@ -6,7 +6,6 @@ use warnings;
 use base 'Resmon::Module';
 
 use Resmon::ExtComm qw(run_command);
-use Data::Dumper;
 
 =pod
 
