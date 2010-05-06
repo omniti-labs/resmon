@@ -67,11 +67,12 @@ sub handler {
     if ($osname eq 'openbsd') {
         foreach (split(/queue\s+/, $output)) {
             next unless /\w+/;
-            /(\S+)\s+.*\n\s+\[\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+)\s+dropped\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+).*/;
-            $metrics{"${1}_pkts"} = [$2, 'i'],
-            $metrics{"${1}_bytes"} = [$3, 'i'],
-            $metrics{"${1}_drop_pkts"} = [$4, 'i'],
-            $metrics{"${1}_drop_bytes"} = [$5, 'i'],
+            if (/(\S+)\s+.*\n\s+\[\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+)\s+dropped\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+).*/) {
+                $metrics{"${1}_pkts"} = [$2, 'i'],
+                $metrics{"${1}_bytes"} = [$3, 'i'],
+                $metrics{"${1}_drop_pkts"} = [$4, 'i'],
+                $metrics{"${1}_drop_bytes"} = [$5, 'i'],
+            }
         }
     } else {
         die "Unknown platform: $osname";
