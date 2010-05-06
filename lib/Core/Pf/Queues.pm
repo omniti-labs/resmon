@@ -68,10 +68,10 @@ sub handler {
         foreach (split(/queue\s+/, $output)) {
             next unless /\w+/;
             if (/(\S+)\s+.*\n\s+\[\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+)\s+dropped\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+).*/) {
-                $metrics{"${1}_pkts"} = [$2, 'i'],
-                $metrics{"${1}_bytes"} = [$3, 'i'],
-                $metrics{"${1}_drop_pkts"} = [$4, 'i'],
-                $metrics{"${1}_drop_bytes"} = [$5, 'i'],
+                $metrics{"${1}_pkts"} = [$2, 'n'],
+                $metrics{"${1}_bytes"} = [$3, 'n'],
+                $metrics{"${1}_drop_pkts"} = [$4, 'n'],
+                $metrics{"${1}_drop_bytes"} = [$5, 'n'],
             }
         }
     } else {
