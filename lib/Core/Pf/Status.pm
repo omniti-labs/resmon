@@ -118,10 +118,10 @@ sub handler {
         foreach (split(/\n/, $output)) {
             if (/^\s+\w+.*/) {
                 if (/^\s+current\sentries\s+(\d+)\s+/) {
-                    $metrics{'state_entries'} = [$1, 'n'];
+                    $metrics{'state_entries'} = [$1, 'L'];
                 } else {
                     /^\s+(\S+)\s+(\d+).*/;
-                    $metrics{$keys{$1}} = [$2, 'n'];
+                    $metrics{$keys{$1}} = [$2, 'L'];
                 }
             }
         }
