@@ -89,7 +89,7 @@ sub handler {
     my $self = shift;
     my $config = $self->{'config'};
     my $pfctl_path = $config->{'pfctl_path'} || 'pfctl';
-    my $output = run_command("$pfctl_path -si");
+    my $output = run_command("$pfctl_path -si") || die "Unable to execute: $pfctl_path";
     my $osname = $^O;
     my %metrics;
     my %keys = (
