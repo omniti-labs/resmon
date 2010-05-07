@@ -458,7 +458,7 @@ sub open {
     unless(defined($self->{shared_state})) {
         $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
             IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
-        die "$0: $!" if($self->{shared_state} == -1);
+        die "$0: $!" unless (defined $self->{shared_state});
     }
     return 1;
 }
