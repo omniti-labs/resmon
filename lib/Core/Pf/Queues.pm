@@ -51,6 +51,10 @@ Optional path to the pfctl executable.
 
 =item drop_pkts
 
+=item mbits
+
+=item drop_mbits
+
 =back
 
 =cut
@@ -71,10 +75,14 @@ sub handler {
                 $metrics{"${1}_bytes"} = [$3, 'L'];
                 $metrics{"${1}_drop_pkts"} = [$4, 'L'];
                 $metrics{"${1}_drop_bytes"} = [$5, 'L'];
-            } else {
-                die "No queues found";
+                $metrics{"${1}_mbits"} = ($3 > 0) ? [($3 * 8 / 1000000), 'n'] : [0, 'n'];
+                $metrics{"${1}_drop_mbits"} = ($5 > 0) ? [($5 * 8 / 1000000), 'n'] : [0, 'n'];
             }
         }
+        unless (keys %metrics) {
+            die "No queues found";
+        }
+
     } else {
         die "Unknown platform: $osname";
     }
