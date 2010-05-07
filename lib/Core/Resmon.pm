@@ -18,7 +18,7 @@ sub new {
     }
     $self->{svn_revision} = `$svnversion`;
     if ($self->{svn_revision} eq "") {
-        $self->svn_revision = "unknown";
+        $self->{svn_revision} = "unknown";
     }
     chomp $self->{svn_revision};
 
