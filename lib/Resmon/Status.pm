@@ -8,50 +8,53 @@ use IO::File;
 use IO::Socket;
 use Socket;
 use Fcntl qw/:flock/;
-use IPC::SysV qw /IPC_PRIVATE IPC_CREAT IPC_RMID S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
 
-my $SEGSIZE = 1024*256;
 my $KEEPALIVE_TIMEOUT = 5;
 my $REQUEST_TIMEOUT = 60;
 sub new {
     my $class = shift;
     my $file = shift;
+    my $fh = IO::File->new(".$file.state", "+>");
+    # Delete the just opened file - it stays open, but doesn't show on disk
+    unlink ".$file.state";
     return bless {
-        file => $file
+        file => $file,
+        shared_state => $fh
     }, $class;
 }
 
 sub get_shared_state {
     my $self = shift;
-    my $blob;
-    my $len;
-    return unless(defined($self->{shared_state}));
-    # Lock shared segment
-    # Read in
-    shmread($self->{shared_state}, $len, 0, length(pack('i', 0)));
-    $len = unpack('i', $len);
-    shmread($self->{shared_state}, $blob, length(pack('i', 0)), $len);
-    # unlock
-    my $VAR1;
-    eval $blob;
-    die $@ if ($@);
-    $self->{store} = $VAR1;
+    my $fh = $self->{shared_state};
+    if (defined $fh) {
+        my $VAR1;
+        $fh->seek(0, 0);
+        my $blob;
+        {
+            local $/ = undef;
+            $blob = <$fh>;
+        }
+        eval $blob;
+        die $@ if ($@);
+        $self->{store} = $VAR1;
+    } else {
+        die "Unable to read shared state";
+    };
     return $self->{store};
 }
 
 sub store_shared_state {
     my $self = shift;
-    return unless(defined($self->{shared_state}));
-    my $blob = Dumper($self->{store});
-
-    # Lock shared segment
-    # Write state and flush
-    shmwrite($self->{shared_state}, pack('i', length($blob)),
-        0, length(pack('i', 0))) || die "$!";
-    shmwrite($self->{shared_state}, $blob, length(pack('i', 0)),
-        length($blob)) || die "$!";
-    # unlock
+    my $fh = $self->{shared_state};
+    if (defined($fh)) {
+        $fh->truncate(0);
+        $fh->seek(0,0);
+        print $fh Dumper($self->{store});
+        $fh->flush();
+    } else {
+        die "Unable to store shared state";
+    };
 }
 
 sub xml_kv_dump {
@@ -467,11 +470,6 @@ sub open {
     $self->{swap_on_close} = 1; # move this to a non .swap version on close
     chmod 0644, "$self->{file}.swap";
 
-    unless(defined($self->{shared_state})) {
-        $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
-            IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
-        die "$0: $!" unless (defined $self->{shared_state});
-    }
     return 1;
 }
 
@@ -529,9 +527,6 @@ sub DESTROY {
         sleep 1;
         kill 9, $child if(kill 0, $child);
         waitpid(-1,WNOHANG);
-    }
-    if(defined($self->{shared_state})) {
-        shmctl($self->{shared_state}, IPC_RMID, 0);
     }
 }
 1;
