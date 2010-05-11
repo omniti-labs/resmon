@@ -21,6 +21,7 @@ sub new {
         file => $file
     }, $class;
 }
+
 sub get_shared_state {
     my $self = shift;
     my $blob;
@@ -38,6 +39,7 @@ sub get_shared_state {
     $self->{store} = $VAR1;
     return $self->{store};
 }
+
 sub store_shared_state {
     my $self = shift;
     return unless(defined($self->{shared_state}));
@@ -51,6 +53,7 @@ sub store_shared_state {
         length($blob)) || die "$!";
     # unlock
 }
+
 sub xml_kv_dump {
     my $info = shift;
     my $indent = shift || 0;
@@ -80,6 +83,7 @@ sub xml_kv_dump {
     }
     return $rv;
 }
+
 sub xml_info {
     my ($module, $service, $info) = @_;
     my $rv = '';
@@ -88,6 +92,7 @@ sub xml_info {
     $rv .= "  </ResmonResult>\n";
     return $rv;
 }
+
 sub xml_escape {
     my $v = shift;
     $v =~ s/&/&amp;/g;
@@ -96,6 +101,7 @@ sub xml_escape {
     $v =~ s/'/&apos;/g;
     return $v;
 }
+
 sub dump_generic {
     my $self = shift;
     my $dumper = shift;
@@ -107,6 +113,7 @@ sub dump_generic {
     }
     return $rv;
 }
+
 sub dump_generic_module {
     # Dumps a single module rather than all checks
     my $self = shift;
@@ -262,6 +269,7 @@ EOF
     ;
     return $response;
 }
+
 sub service {
     my $self = shift;
     my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
@@ -316,6 +324,7 @@ sub service {
     }
     die "Request not understood\n";
 }
+
 sub http_header {
     my $code = shift;
     my $len = shift;
@@ -327,6 +336,7 @@ sub http_header {
     (($close_connection || !$len) ? "Connection: close\n" : "") .
     "Content-Type: $type; charset=utf-8\n" . $extra_headers . "\n";
 }
+
 sub base64_decode($) {
     # Base64 decoding for basic auth
     # We cheat when doing the decoding - perl can do uudecoding using unpack -
@@ -342,6 +352,7 @@ sub base64_decode($) {
     # beginning
     return unpack("u", $len.$enc);
 }
+
 sub serve_http_on {
     my $self = shift;
     my $ip = shift;
@@ -442,6 +453,7 @@ sub serve_http_on {
     close($handle);
     return;
 }
+
 sub open {
     my $self = shift;
     return 0 unless(ref $self);
@@ -462,18 +474,21 @@ sub open {
     }
     return 1;
 }
+
 sub store {
     my ($self, $type, $name, $info) = @_;
     %{$self->{store}->{$type}->{$name}} = %$info;
     $self->{store}->{$type}->{$name}->{last_update} = time;
     $self->store_shared_state();
 }
+
 sub clear {
     # Clear all state after a reload
     my $self = shift;
     $self->{store} = {};
     $self->store_shared_state;
 }
+
 sub write {
     # Writes the metrics output for a single check to stdout and/or a file
     my ($self, $module_name, $check_name, $metrics, $debug) = @_;
@@ -491,6 +506,7 @@ sub write {
         print $metrics_output;
     }
 }
+
 sub close {
     my $self = shift;
     $self->{handle}->close() if($self->{handle});
@@ -502,6 +518,7 @@ sub close {
         delete($self->{swap_on_close});
     }
 }
+
 sub DESTROY {
     my $self = shift;
     # Make sure we're really the parent process
