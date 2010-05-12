@@ -65,8 +65,15 @@ sub new {
                 my $mod_filename = "$current.pm";
                 $mod_filename =~ s/::/\//g;
                 delete $INC{$mod_filename};
-
-                eval "use $current;";
+                {
+                    local($SIG{__WARN__}) = sub {
+                        if($_[0] =~ /[Ss]ubroutine ([\w:]+) redefined/ ) {
+                            return;
+                        }
+                        warn @_;
+                    };
+                    eval "use $current;";
+                }
                 if ($@) {
                     print STDERR "Problem loading monitor $current:\n";
                     print STDERR "$@\n";
