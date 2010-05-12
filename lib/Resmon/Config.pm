@@ -13,7 +13,8 @@ sub new {
         configfile => $filename,
         modstatus => [],
         # Defaults
-        timeout => 10
+        timeout => 10,
+        Module => {}
     }, $class;
     my $conf;
     open($conf, "<$filename") ||
@@ -74,7 +75,7 @@ sub new {
                     $current = "BAD_MODULE";
                     next;
                 }
-                $self->{Module}->{$current} = [];
+                $self->{Module}->{$current} ||= [];
                 next;
             }
             elsif(/\S*LIB\s+(\S+)\s*;\s*/) {
