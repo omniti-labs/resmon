@@ -366,7 +366,11 @@ sub serve_http_on {
     my $port = shift;
     $self->{authuser} = shift;
     $self->{authpass} = shift;
-    $ip = INADDR_ANY if(!defined($ip) || $ip eq '' || $ip eq '*');
+    if(!defined($ip) || $ip eq '' || $ip eq '*') {
+        $ip = INADDR_ANY;
+    } else {
+        $ip = inet_aton($ip);
+    }
     $port ||= 81;
 
     my $handle = IO::Socket->new();
