@@ -28,6 +28,7 @@ sub get_shared_state {
     my $self = shift;
     my $fh = $self->{shared_state};
     if (defined $fh) {
+        flock($fh, LOCK_EX); # Obtain a lock on the file
         my $VAR1;
         $fh->seek(0, 0);
         my $blob;
@@ -35,6 +36,7 @@ sub get_shared_state {
             local $/ = undef;
             $blob = <$fh>;
         }
+        flock($fh, LOCK_UN); # Release the lock
         eval $blob;
         die $@ if ($@);
         $self->{store} = $VAR1;
@@ -48,10 +50,12 @@ sub store_shared_state {
     my $self = shift;
     my $fh = $self->{shared_state};
     if (defined($fh)) {
+        flock($fh, LOCK_EX); # Obtain a lock on the file
         $fh->truncate(0);
         $fh->seek(0,0);
         print $fh Dumper($self->{store});
         $fh->flush();
+        flock($fh, LOCK_UN); # Release the lock
     } else {
         die "Unable to store shared state";
     };
