@@ -89,7 +89,7 @@ if($config->{port});
 
 while(1) {
     while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
-        foreach my $monitor_obj (@$mod_configs) {
+        while(my($check_name, $monitor_obj) = each %$mod_configs) {
             my $check_metric = {};
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired

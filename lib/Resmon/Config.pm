@@ -50,7 +50,7 @@ sub new {
                     push @{$self->{modstatus}}, "$current`$check_name";
                     next;
                 }
-                push(@{$self->{Module}->{$current}}, $object);
+                $self->{Module}->{$current}->{$check_name} = $object;
             } elsif (/^\s*\}\s*$/) {
                 $current = undef;
             } else {
@@ -82,7 +82,7 @@ sub new {
                     $current = "BAD_MODULE";
                     next;
                 }
-                $self->{Module}->{$current} ||= [];
+                $self->{Module}->{$current} ||= {};
                 next;
             }
             elsif(/\S*LIB\s+(\S+)\s*;\s*/) {
