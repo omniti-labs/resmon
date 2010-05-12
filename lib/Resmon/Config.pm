@@ -109,11 +109,16 @@ sub new {
                 $self->{authpass} = $1;
                 next;
             } elsif(/\s*INCLUDE\s+(\S+)\s*;\s*/) {
-                my $incfilename = $1;
+                my $incglob = $1;
+
+                # Apply percent substitutions
                 my $HOSTNAME = hostname; # Uses Sys::Hostname
-                $incfilename =~ s/%h/$HOSTNAME/g;
-                $incfilename =~ s/%o/$^O/g;
-                new($class, $incfilename, $self);
+                $incglob =~ s/%h/$HOSTNAME/g;
+                $incglob =~ s/%o/$^O/g;
+
+                foreach my $incfilename (glob $incglob) {
+                    new($class, $incfilename, $self);
+                }
             } else {
                 die "Syntax Error in config file $filename on line $line\n";
             }
