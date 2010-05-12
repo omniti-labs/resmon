@@ -27,7 +27,7 @@ Documentation for a module should be done using pod (see B<perldoc perlpod>).
 
 To read the documenation, use B<perldoc Sample.pm>.
 
-To verify the documentatioe, use B<podchecker Sample.pm>.
+To verify the documentation, use B<podchecker Sample.pm>.
 
 =head1 CONFIGURATION
 
