@@ -20,15 +20,7 @@ Core::Zoneinfo - report zone information
  }
 
  Core::Zoneinfo {
-     zoneinfo : zonecfg_path = '/usr/sbin/zonecfg'
- }
-
- Core::Zoneinfo {
-     zoneinfo : zoneadm_path = '/usr/sbin/zoneadm'
- }
-
- Core::Zoneinfo {
-     zoneinfo : zfs_path = '/usr/sbin/zfs'
+     zoneinfo : zonecfg_path => /usr/sbin/zonecfg
  }
 
 =head1 DESCRIPTION
@@ -43,29 +35,39 @@ Reports zone info, such as name, root filesystem path, creation date.
 
 The check name is descriptive only in this check. It is not used for anything.
 
+=item zonecfg_path
+
+Optional.  Specifies the path to the zonecfg command.
+
+=item zoneadm_path
+
+Optional.  Specifies the path to the zoneadm command.
+
+=item zfs_path
+
+Optional.  Specifies the path to the zfs command.
+
 =back
 
 =head1 METRICS
 
 =over
 
-=item check_name
+=item path
 
-The name of the current check. You wouldn't normally return this, but it is
-here to show how to access the check name, and for testing purposes.
+The path to the root of the zone.  This corresponds to the 'zonepath' config
+option to zonecfg(1M).
 
-=item arg1
+=item dataset
 
-The contents of what you put in the arg1 configuration variable.
+The ZFS dataset that provides the zone root, if the zone is on its own ZFS
+filesystem.  If the zone is not on its own ZFS filesystem, this will return
+'Not a mountpoint'.
 
-=item arg2
+=item creation
 
-The contents of what you put in the arg2 configuration variable.
-
-=item date
-
-Todays date. It only shows the actual date of the month as an example of an
-integer (type "i") metric.
+The creation date of the zone's ZFS filesystem.  If the zone is not on its own
+ZFS filesystem, this metric is not returned.
 
 =back
 
