@@ -72,7 +72,7 @@ sub handler {
         $metrics{$result->{'Variable_name'}} = $result->{'Value'};
     }
 
-    return { %metrics };
+    return \%metrics;
 };
 
 1;

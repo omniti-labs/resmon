@@ -82,7 +82,7 @@ sub handler {
 
     %metrics = map { $_ => shift(@values) } @keys;
 
-    return { %metrics };
+    return \%metrics;
 };
 
 1;

@@ -90,7 +90,7 @@ sub handler {
         die "Unknown platform: $osname";
     }
 
-    return { %metrics };
+    return \%metrics;
 };
 
 1;
