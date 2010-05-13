@@ -9,6 +9,7 @@ use IO::Socket;
 use Socket;
 use Fcntl qw/:flock/;
 use Data::Dumper;
+use File::Basename;
 
 my $KEEPALIVE_TIMEOUT = 5;
 my $REQUEST_TIMEOUT = 60;
@@ -17,8 +18,9 @@ sub new {
     my $file = shift;
     # State file used for communication between monitor and webserver
     # processes
-    my $fh = IO::File->new(".$file.state", "+>");
-    die "$0: Unable to open .$file.state: $!\n" unless (defined $fh);
+    my $statefile = dirname($file)."/.".basename($file).".state";
+    my $fh = IO::File->new("$statefile", "+>");
+    die "$0: Unable to open $statefile: $!\n" unless (defined $fh);
     # Delete the just opened file - it stays open, but doesn't show on disk
     unlink ".$file.state";
     return bless {
