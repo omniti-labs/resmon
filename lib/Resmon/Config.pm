@@ -22,10 +22,24 @@ sub new {
 
     my $current;
     my $line = 0;
+    my $oldline = '';
     while(<$conf>) {
+        chomp;
         $line++;
         next if /^\s*#/;
         next if /^\s*$/;
+
+        # Line continuation
+        if ($oldline) {
+            $_ = $oldline . $_;
+            $oldline = '';
+        }
+        if (/\\$/) {
+            $_ =~ s/\\$//;
+            $oldline = $_;
+            next;
+        }
+
         if($current) {
             if(/^\s*([^:\s](?:[^:]*[^:\s])?)\s*:\s*(.+)\s*$/) {
                 next if $current eq "BAD_MODULE";
@@ -54,7 +68,7 @@ sub new {
             } elsif (/^\s*\}\s*$/) {
                 $current = undef;
             } else {
-                die "Syntax Error on line $line\n";
+                die "Syntax Error in config file $filename on line $line\n";
             }
         } else {
             if(/\s*(\S+)\s*\{/) {
