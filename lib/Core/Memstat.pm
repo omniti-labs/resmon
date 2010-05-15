@@ -109,16 +109,16 @@ sub handler {
             my $syspages = $kstat->{'unix'}->{0}->{'system_pages'};
 
             foreach (keys %$syspages) {
-                $metrics{"kstat_${_}"} = [int($syspages->{$_} * $pagesize / 1024), 'i'] unless ($_ eq 'class');
+                $metrics{"kstat_${_}"} = [int($syspages->{$_} * $pagesize / 1024), 'L'] unless ($_ eq 'class');
             }
-            $metrics{'kstat_cache_mem'} = int($kstat->{'zfs'}->{0}->{'arcstats'}->{'size'} / 1024);
+            $metrics{'kstat_cache_mem'} = [int($kstat->{'zfs'}->{0}->{'arcstats'}->{'size'} / 1024), 'L'];
             return \%metrics;
         } else {
             my $output = run_command("$vmstat_path");
             if ($output =~ /.*cs\s+us\s+sy\s+id\n\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*/) {
                 return {
-                    'actv_mem' => [$1, 'i'],
-                    'free_mem' => [$2, 'i']
+                    'actv_mem' => [$1, 'L'],
+                    'free_mem' => [$2, 'L']
                 };
             } else {
                 die "Unable to extract statistics\n";
