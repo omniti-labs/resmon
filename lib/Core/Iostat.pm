@@ -16,12 +16,11 @@ Core::Iostat - Monitor disk I/O statistics using iostat
 =head1 SYNOPSIS
 
  Core::Iostat {
-     sd0 : noop
-     sd1 : noop
+     local : noop
  }
 
  Core::Iostat {
-     hda : iostat_path => /usr/sbin/iostat
+     local : iostat_path => /usr/sbin/iostat
  }
 
 =head1 DESCRIPTION
@@ -29,6 +28,7 @@ Core::Iostat - Monitor disk I/O statistics using iostat
 This module monitors I/O statistics for a given disk.  It uses the running
 total values reported by iostat.  The type and number of metrics returned
 depend on the type returned by each platform's respective iostat command.
+Each metric returned is prefixed with the name of the associated disk.
 
 =head1 CONFIGURATION
 
@@ -36,7 +36,8 @@ depend on the type returned by each platform's respective iostat command.
 
 =item check_name
 
-The name of the check refers to the disk to query status for.
+The check name is used for descriptive purposes only.
+It is not used for anything functional.
 
 =item iostat_path
 
@@ -126,28 +127,30 @@ sub handler {
     my $config = $self->{'config'};
     my $iostat_path = $config->{'iostat_path'} || 'iostat';
     my $osname = $^O;
+    my %metrics;
 
     if ($osname eq 'solaris') {
-        my $output = run_command("$iostat_path -xe $disk");
-        my ($line) = grep(/$disk\s*/, split(/\n/, $output));
-        if ($line =~ /$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/) {
-            return {
-                'reads_sec' => [$1, 'i'],
-                'writes_sec' => [$2, 'i'],
-                'kb_read_sec' => [$3, 'i'],
-                'kb_write_sec' => [$4, 'i'],
-                'wait_txn' => [$5, 'i'],
-                'actv_txn' => [$6, 'i'],
-                'rspt_txn' => [$7, 'i'],
-                'wait_pct' => [$8, 'i'],
-                'busy_pct' => [$9, 'i'],
-                'soft_errors' => [$10, 'i'],
-                'hard_errors' => [$11, 'i'],
-                'txport_errors' => [$12, 'i'],
-                'total_errors' => [$13, 'i']
-            };
+        my $output = run_command("$iostat_path -xe");
+        foreach (split(/\n/, $output)) {
+            next unless (/(\w+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/);
+            $metrics{"${1}_reads_sec"} = [$2, 'n'];
+            $metrics{"${1}_writes_sec"} = [$3, 'n'];
+            $metrics{"${1}_kb_read_sec"} = [$4, 'n'];
+            $metrics{"${1}_kb_write_sec"} = [$5, 'n'];
+            $metrics{"${1}_wait_txn"} = [$6, 'n'];
+            $metrics{"${1}_actv_txn"} = [$7, 'n'];
+            $metrics{"${1}_rspt_txn"} = [$8, 'n'];
+            $metrics{"${1}_wait_pct"} = [$9, 'I'];
+            $metrics{"${1}_busy_pct"} = [$10, 'I'];
+            $metrics{"${1}_soft_errors"} = [$11, 'I'];
+            $metrics{"${1}_hard_errors"} = [$12, 'I'];
+            $metrics{"${1}_txport_errors"} = [$13, 'I'];
+            $metrics{"${1}_total_errors"} = [$14, 'I'];
+        }
+        if (keys %metrics) {
+            return \%metrics;
         } else {
-            die "Unable to find disk: $disk\n";
+            die "No disks found\n";
         }
     } elsif ($osname eq 'linux') {
         my $output = run_command("$iostat_path $disk");
