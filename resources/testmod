@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+# testmod - A simple script to test a resmon module
+#
+# Runs a single check with a module, printing the result in the same format as
+# in status.txt. Useful for troubleshooting and developing resmon modules.
+
+use strict;
+use warnings;
+use lib '.';
+
+# Hack to mark modules we provide here as already loaded
+$INC{"Resmon/ExtComm.pm"} = $0;
+
+package Resmon::ExtComm;
+
+use strict;
+use warnings;
+
+use base "Exporter";
+our @EXPORT = qw/cache_command/;
+
+sub cache_command ($$;$) {
+    my $cmd = shift;
+    `$cmd`;
+}
+1;
+
+package main;
+
+use strict;
+
+my $module = shift;        # Module to test
+my $check_name = shift;    # The name of the check
+my $kvs = {@ARGV};
+
+if (!$module || !$check_name) {
+    print "Usage: $0 module_name check_name [[key] [val]] [[key] [val]]\n";
+    exit 1;
+}
+
+$kvs->{'object'} = $check_name;
+
+eval "use Resmon::Module::$module;";
+my $obj = bless $kvs, "Resmon::Module::$module";
+my ($st, $metrics);
+eval { ($st, $metrics) = $obj->handler(); };
+if ($@) {
+    chomp $@;
+    $st = "BAD";
+    $metrics = { "error" => ["$@", "s"] };
+}
+if (!defined ($metrics)) {
+    # Old style return values OK(message)
+    ($st, $metrics) = $st =~ /(OK|WARNING|BAD)\((.*)\)/;
+}
+if (ref($metrics) ne "HASH") {
+    $metrics = {
+        "message" => $metrics
+    };
+}
+
+print "$module $kvs->{object} - $st\n\n";
+for my $k (sort keys %$metrics) {
+    my $v = $metrics->{$k};
+    if (ref($v) ne "ARRAY") {
+        $v = [$v, "0"];
+    }
+    printf "%15s = %s (%s)\n", $k , $v->[0], $v->[1];
+}
