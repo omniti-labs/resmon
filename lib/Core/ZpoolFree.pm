@@ -16,11 +16,11 @@ Core::ZpoolFree - monitor free space available on ZFS pools
 =head1 SYNOPSIS
 
  Core::ZpoolFree {
-     zpools: noop
+     * : noop
  }
 
  Core::ZpoolFree {
-     zpools: zfs_path = '/sbin/zfs'
+     * : zfs_path => '/sbin/zfs'
  }
 
 =head1 DESCRIPTION
@@ -59,22 +59,19 @@ Specify an alternative location for the zpool command. Default: /sbin/zpool.
 
 =head1 METRICS
 
-A set of metrics is returned for each pool on the system, with the name of the
-pool being used as a prefix. For example, if you have rpool and data pools,
-then you will end up with both rpool_free_KB and data_free_KB (as well as the
-rest of the metrics for each pool).
+A set of metrics is returned for each pool on the system.
 
 =over
 
-=item poolname_free_MB
+=item free_MB
 
 The amount of free space in the pool, measured in megabytes.
 
-=item poolname_used_MB
+=item used_MB
 
 The amount of used space in the pool, measured in megabytes.
 
-=item poolname_percent_full
+=item percent_full
 
 The amount of used space in the pool, expressed as a percentage of the total
 space.
@@ -94,7 +91,7 @@ our %units = (
     'Z' => 1180591620717411303424
 );
 
-sub handler {
+sub wildcard_handler {
     my $self = shift;
     my $config = $self->{config}; # All configuration is in here
     my $zfs_command = $config->{zfs_command} || "/sbin/zfs";
@@ -118,9 +115,9 @@ sub handler {
         $free = $free * $units{$funit} if $funit;
 
         my $percent_full = sprintf("%.2f", ($used / ($used + $free)) * 100);
-        $status->{"${name}_used_MB"} = [int($used/1048576), "i"];
-        $status->{"${name}_free_MB"} = [int($free/1048576), "i"];
-        $status->{"${name}_percent_full"} = [$percent_full, "n"];
+        $status->{$name}->{"used_MB"} = [int($used/1048576), "i"];
+        $status->{$name}->{"free_MB"} = [int($free/1048576), "i"];
+        $status->{$name}->{"percent_full"} = [$percent_full, "n"];
     }
 
     return $status;
