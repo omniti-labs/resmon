@@ -63,7 +63,7 @@ Optional path to the pfctl executable.
 
 =cut
 
-sub wilcard_handler {
+sub wildcard_handler {
     my $self = shift;
     my $config = $self->{'config'};
     my $pfctl_path = $config->{'pfctl_path'} || 'pfctl';
