@@ -22,8 +22,7 @@ Core::Pf::Labels - gather label statistics from PF firewalls
 =head1 DESCRIPTION
 
 This module retrieves label statistics from PF firewalls using
-the pfctl command.  Each metric returned is prefixed with the
-name of the associated label.
+the pfctl command. Metrics for each label are returned as a separate check.
 
 =head1 CONFIGURATION
 
@@ -31,7 +30,8 @@ name of the associated label.
 
 =item check_name
 
-Arbitrary name of the check.
+This is a wildcard module and will return metrics for all labels. As such, the
+check name should be an asterisk (*).
 
 =item pfctl_path
 
@@ -63,34 +63,35 @@ Optional path to the pfctl executable.
 
 =cut
 
-sub handler {
+sub wilcard_handler {
     my $self = shift;
     my $config = $self->{'config'};
     my $pfctl_path = $config->{'pfctl_path'} || 'pfctl';
-    my $output = run_command("$pfctl_path -sl") || die "Unable to execute: $pfctl_path";
+    my $output = run_command("$pfctl_path -sl") ||
+        die "Unable to execute: $pfctl_path";
     my $osname = $^O;
-    my %metrics;
+    my $metrics;
 
     if ($osname eq 'openbsd') {
         foreach (split(/\n/, $output)) {
             if (/(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
-                $metrics{"${1}_evals"} += $2;
-                $metrics{"${1}_pkts"} += $3;
-                $metrics{"${1}_bytes"} += $4;
-                $metrics{"${1}_pkts_in"} += $5;
-                $metrics{"${1}_bytes_in"} += $6;
-                $metrics{"${1}_pkts_out"} += $7;
-                $metrics{"${1}_bytes_out"} += $8;
-                $metrics{"${1}_states"} += $9;
-            } else {
-                die "No queues found";
+                $metrics->{$1}->{"evals"} += $2;
+                $metrics->{$1}->{"pkts"} += $3;
+                $metrics->{$1}->{"bytes"} += $4;
+                $metrics->{$1}->{"pkts_in"} += $5;
+                $metrics->{$1}->{"bytes_in"} += $6;
+                $metrics->{$1}->{"pkts_out"} += $7;
+                $metrics->{$1}->{"bytes_out"} += $8;
+                $metrics->{$1}->{"states"} += $9;
             }
         }
     } else {
-        die "Unknown platform: $osname";
+        die "Unknown platform: $osname\n";
     }
 
-    return \%metrics;
+    die "No labels found\n" unless (%$metrics);
+
+    return $metrics;
 };
 
 1;
