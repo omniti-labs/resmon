@@ -90,40 +90,51 @@ $status->serve_http_on($config->{interface}, $config->{port},
 while(1) {
     while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
         while(my($check_name, $monitor_obj) = each %$mod_configs) {
-            my $check_metric = {};
+            my $check_metrics = {};
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired
-            $check_metric = $monitor_obj->get_cached_metrics();
+            $check_metrics = $monitor_obj->get_cached_metrics();
             # Otherwise, run the check
-            if (!$check_metric) {
+            if (!$check_metrics) {
                 my $timeout = $monitor_obj->{'check_timeout'} ||
                     $config->{'timeout'};
                 alarm($timeout);
+                my $handler;
                 eval {
                     local $SIG{ALRM} = sub { die "alarm\n" };
-                    $check_metric = $monitor_obj->handler();
+                    if ($check_name eq "*") {
+                        $check_metrics = $monitor_obj->wildcard_handler;
+                    } else {
+                        $check_metrics = {
+                            $check_name => $monitor_obj->handler
+                        };
+                    }
                 };
                 alarm 0;
                 # Store the last metrics for use by fresh_status_msg later
-                $monitor_obj->cache_metrics($check_metric);
+                $monitor_obj->cache_metrics($check_metrics);
             };
             my $checkproblem = $@;
-            my $results = {
-                last_runtime_seconds => sprintf("%.6f",
-                    tv_interval($starttime)),
-                metric => $check_metric
-            };
             if($checkproblem) {
                 chomp $checkproblem;
-                $results->{metric} = { "error" => ["$checkproblem", "s"]};
                 if ($checkproblem eq "alarm") {
-                    $results->{metric} = { "error" => ["Check timeout", "s"]};
+                    $checkproblem = "Check timeout";
                 }
+                $check_metrics = {
+                    $check_name => {"error" => ["$checkproblem", "s"]}
+                };
                 Resmon::ExtComm::clean_up;
             }
-            $status->store($module_name,$monitor_obj->{'check_name'}, $results);
-            $status->write($module_name,$monitor_obj->{'check_name'},
-                $results->{'metric'}, $debug);
+            foreach my $name (keys %$check_metrics) {
+                my $results = {
+                    last_runtime_seconds => sprintf("%.6f",
+                        tv_interval($starttime)),
+                    metric => $check_metrics->{$name}
+                };
+                $status->store($module_name,$name, $results);
+                $status->write($module_name,$name, $results->{'metric'},
+                    $debug);
+            }
         }
     }
     $status->close();

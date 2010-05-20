@@ -12,9 +12,11 @@ sub new {
 }
 
 sub handler {
-    return {
-        'error_message' => ["Monitor not implemented", "s"]
-    }
+    die "Monitor not implemented.\n";
+}
+
+sub wildcard_handler {
+    die "Monitor not implemented.\n";
 }
 
 sub cache_metrics {
