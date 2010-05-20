@@ -25,6 +25,10 @@ Core::DiskFree - Monitor disk free space using df
      / : dfcmd => /bin/df -kP
  }
 
+ Core::DiskFree {
+    * : noop
+ }
+
 =head1 DESCRIPTION
 
 This module monitors the used/free space for a filesystem using the df
@@ -40,13 +44,21 @@ this one to measure free space.
 =item check_name
 
 The name of the check refers to the filesystem to check the free space on. It
-can specify either the mountpoint or the device for the filesystem.
+can specify either the mountpoint or the device for the filesystem. If * is
+specified, fetch metrics for all mounted filesystems.
 
 =item dfcmd
 
 This specifies the df command (including arguments) to run in the event that
 the default is not sufficient. It is optional and in most cases you do not
 need to set this.
+
+=item excludes
+
+This is only used when * is specified for the check name. It contains a regex
+of filesystems to exclude from the results. If this isn't specified, a default
+regex is used that will exclude various common filesystems that aren't 'real'
+such as /proc or swap.
 
 =back
 
@@ -102,5 +114,34 @@ sub handler {
         die "Unable to get free space\n";
     }
 };
+
+sub wildcard_handler {
+    my $self = shift;
+    my $config = $self->{config};
+    my $dfcmd = $config->{dfcmd} || $self->{default_dfcmd};
+    my $excludes = $config->{excludes};
+    if (!defined $excludes) {
+        # Exclude some default 'fake' filesystems
+        $excludes = "^(none|swap|proc|ctfs|mnttab|objfs|fd)\$";
+    }
+    my $metrics = {};
+
+    my $output = run_command("$dfcmd");
+    for my $line (split /\n/, $output) {
+        if($line =~ /^(\S+)\s+\d+\s+(\d+)\s+(\d+)\s+(\d+)%/) {
+            my ($fs, $used, $free, $percent) = ($1, $2, $3, $4);
+            next if $fs =~ /$excludes/;
+            $metrics->{$fs} = {
+                "used_KB" => [$used, "i"],
+                "free_KB" => [$free, "i"],
+                "used_percent" => [$percent, "i"]
+            };
+        }
+    }
+    if (!%$metrics) {
+        die "Unable to get free space\n";
+    }
+    return $metrics;
+}
 
 1;
