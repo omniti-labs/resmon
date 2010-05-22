@@ -85,6 +85,11 @@ sub wildcard_handler {
                 $metrics->{$1}->{"states"} += $9;
             }
         }
+        for my $queue (keys %$metrics) {
+            for my $key (keys %{$metrics->{$queue}}) {
+                $metrics->{$queue}->{$key} = [$metrics->{$queue}->{$key}, 'L'];
+            }
+        }
     } else {
         die "Unknown platform: $osname\n";
     }
