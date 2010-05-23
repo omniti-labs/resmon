@@ -129,7 +129,7 @@ sub handler {
         open(MEMINFO, '/proc/meminfo') || die "Unable to read proc: $!\n";
         while (<MEMINFO>) {
             /(\w+)\:\s+(\d+).*/;
-            $metrics{$1} = [$2, 'i'];
+            $metrics{$1} = [$2, 'L'];
         }
         close(MEMINFO);
         return \%metrics;
@@ -138,7 +138,7 @@ sub handler {
         open(SYSCTL, 'sysctl hw.physmem vm.stats.vm |') || die "Unable to read sysctl: $!\n";
         while (<SYSCTL>) {
             /(.*)\:\s+(\d+).*/;
-            $metrics{$1} = [$2, 'i'];
+            $metrics{$1} = [$2, 'L'];
         }
         for my $page qw( cache inactive active wire free page ) {
             $metrics{"vm.stats.vm.v_${page}_count"}->[0] *= ($metrics{'vm.stats.vm.v_page_size'}->[0] / 1024);
@@ -149,8 +149,8 @@ sub handler {
         my $output = run_command("$vmstat_path");
         if ($output =~ /.*cs\s+us\s+sy\s+id\n\s+\d+\s+\d+\s+\d+\s+(\d+)\s+(\d+).*/) {
             return {
-                'actv_mem' => [$1, 'i'],
-                'free_mem' => [$2, 'i']
+                'actv_mem' => [$1, 'L'],
+                'free_mem' => [$2, 'L']
             };
         } else {
             die "Unable to extract statistics\n";
