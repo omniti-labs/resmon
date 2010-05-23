@@ -81,6 +81,9 @@ sub handler {
     }
 
     %metrics = map { $_ => shift(@values) } @keys;
+    for my $key (keys %metrics) {
+        $metrics{$key} = [$metrics{$key}, 'I'];
+    }
 
     return \%metrics;
 };
