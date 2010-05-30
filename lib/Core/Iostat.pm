@@ -101,6 +101,42 @@ Number of hard errors.
 
 Number of transport errors.
 
+=item rrqm_sec
+
+The number of read requests merged per second that were queued to the device.
+
+=item wrqm_sec
+
+The number of write requests merged per second that were queued to the device.
+
+=item rsec_sec
+
+The number of sectors read from the device per second.
+
+=item wsec_sec
+
+The number of sectors written to the device per second.
+
+=item avgrq_size
+
+The average size (in sectors) of the requests that were issued to the device.
+
+=item avgqu_size
+
+The average queue length of the requests that were issued to the device.
+
+=item await_msec
+
+The average time (in milliseconds) for I/O requests issued to the device to be served.
+
+=item svctm_msec
+
+The average service time (in milliseconds) for I/O requests that were issued to the device.
+
+=item util_pct
+
+Percentage of CPU time during which I/O requests were issued to the device.
+
 =item kb_xfrd
 
 Kilobytes transferred (counter).
@@ -153,13 +189,23 @@ sub handler {
             die "No disks found\n";
         }
     } elsif ($osname eq 'linux') {
-        my $output = run_command("$iostat_path $disk");
-        my ($line) = grep(/$disk\s*/, split(/\n/, $output));
-        if ($line =~ /^$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+).*/) {
+        my $interval = 5;
+        my $count = 2;
+        my $output = run_command("$iostat_path -x $disk $interval $count");
+        my ($line) = (grep(/$disk\s*/, split(/\n/, $output)))[1];
+        if ($line =~ /^$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*/) {
             return {
-                'xfrs_sec' => [$1, 'i'],
-                'reads_sec' => [$2, 'i'],
-                'writes_sec' => [$3, 'i']
+                "${disk}_rrqm_sec" => [$1, 'n'],
+                "${disk}_wrqm_sec" => [$2, 'n'],
+                "${disk}_reads_sec" => [$3, 'n'],
+                "${disk}_writes_sec" => [$4, 'n'],
+                "${disk}_rsec_sec" => [$5, 'n'],
+                "${disk}_wsec_sec" => [$6, 'n'],
+                "${disk}_avgrq_size" => [$7, 'n'],
+                "${disk}_avgqu_size" => [$8, 'n'],
+                "${disk}_await_msec" => [$9, 'n'],
+                "${disk}_svctm_msec" => [$10, 'n'],
+                "${disk}_util_pct" => [$11, 'n']
             };
         } else {
             die "Unable to find disk: $disk\n";
