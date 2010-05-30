@@ -166,7 +166,9 @@ sub handler {
     my %metrics;
 
     if ($osname eq 'solaris') {
-        my $output = run_command("$iostat_path -xe");
+        my $interval = 5;
+        my $count = 2;
+        my $output = run_command("$iostat_path -xe $interval $count");
         foreach (split(/\n/, $output)) {
             next unless (/(\w+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/);
             $metrics{"${1}_reads_sec"} = [$2, 'n'];
