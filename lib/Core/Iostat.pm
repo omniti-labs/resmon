@@ -229,9 +229,9 @@ sub handler {
         my $output = run_command("$iostat_path -D -I $disk");
         if ($output =~ /\s+$disk\s+\n\s+KB xfr time\s+\n\s+(\d+)\s+(\d+)\s+(\S+).*/) {
             return {
-                'kb_xfrd' => [$1, 'i'],
-                'disk_xfrs' => [$2, 'i'],
-                'busy_sec' => [$3, 'i']
+                'kb_xfrd' => [$1, 'I'],
+                'disk_xfrs' => [$2, 'I'],
+                'busy_sec' => [$3, 'n']
             };
         } else {
             die "Unable to find disk: $disk\n";
