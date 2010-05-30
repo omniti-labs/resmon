@@ -35,7 +35,7 @@ start() {
 }
 stop() {
         echo -n $"Shutting down resmon: "
-        killproc resmon
+        killproc $RESMON_BIN
         echo
         RETVAL=$?
         [ $RETVAL -eq 0 ] && rm -f $RESMON_LOCK
@@ -50,7 +50,7 @@ restart() {
 }
 reload() {
         echo -n $"Reloading resmon: "
-        killproc resmon -HUP
+        killproc $RESMON_BIN -HUP
         echo
         return $?
 }
