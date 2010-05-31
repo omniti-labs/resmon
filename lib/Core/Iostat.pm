@@ -36,8 +36,12 @@ Each metric returned is prefixed with the name of the associated disk.
 
 =item check_name
 
-The check name is used for descriptive purposes only.
-It is not used for anything functional.
+The check name is used for descriptive purposes on Solaris,
+Linux and FreeBSD.  On these systems, Core::Iostat gathers
+statistics for all of the available drives.
+
+For OpenBSD, it is the required name of the disk being passed
+to iostat.
 
 =item iostat_path
 
