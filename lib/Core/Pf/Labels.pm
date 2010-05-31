@@ -16,7 +16,7 @@ Core::Pf::Labels - gather label statistics from PF firewalls
 =head1 SYNOPSIS
 
  Core::Pf::Labels {
-    local : pfctl_path => /sbin/pfctl
+    * : pfctl_path => /sbin/pfctl
  }
 
 =head1 DESCRIPTION
