@@ -213,16 +213,18 @@ sub handler {
             die "Unable to find disk: $disk\n";
         }
     } elsif ($osname eq 'freebsd') {
-        my $output = run_command("$iostat_path -x $disk");
-        my ($line) = grep(/$disk\s*/, split(/\n/, $output));
+        my $interval = 5;
+        my $count = 2;
+        my $output = run_command("$iostat_path -x $disk $interval $count");
+        my ($line) = (grep(/$disk\s*/, split(/\n/, $output)))[1];
         if ($line =~ /^$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\S+).*/) {
             return {
-                'reads_sec' => [$1, 'i'],
-                'writes_sec' => [$2, 'i'],
-                'kb_read_sec' => [$3, 'i'],
-                'kb_write_sec' => [$4, 'i'],
-                'lqueue_txn' => [$5, 'i'],
-                'rspt_txn' => [$6, 'i']
+                "${disk}_reads_sec" => [$1, 'n'],
+                "${disk}_writes_sec" => [$2, 'n'],
+                "${disk}_kb_read_sec" => [$3, 'n'],
+                "${disk}_kb_write_sec" => [$4, 'n'],
+                "${disk}_lqueue_txn" => [$5, 'I'],
+                "${disk}_rspt_txn" => [$6, 'n']
             };
         } else {
             die "Unable to find disk: $disk\n";
