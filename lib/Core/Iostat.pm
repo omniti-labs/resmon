@@ -81,6 +81,14 @@ Average number of transactions waiting for service.
 
 Average number of transactions actively being serviced.
 
+=item wsvct_msec
+
+Average service time in wait queue, in milliseconds.
+
+=item asvct_msec
+
+Average service time of active transactions, in milliseconds.
+
 =item rspt_txn
 
 Average response time of transactions, in milliseconds.
@@ -172,22 +180,24 @@ sub handler {
     if ($osname eq 'solaris') {
         my $interval = 5;
         my $count = 2;
-        my $output = run_command("$iostat_path -xe $interval $count");
+        my $output = run_command("$iostat_path -xne $interval $count");
         foreach (split(/\n/, $output)) {
-            next unless (/(\w+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+).*/);
-            $metrics{"${1}_reads_sec"} = [$2, 'n'];
-            $metrics{"${1}_writes_sec"} = [$3, 'n'];
-            $metrics{"${1}_kb_read_sec"} = [$4, 'n'];
-            $metrics{"${1}_kb_write_sec"} = [$5, 'n'];
-            $metrics{"${1}_wait_txn"} = [$6, 'n'];
-            $metrics{"${1}_actv_txn"} = [$7, 'n'];
-            $metrics{"${1}_rspt_txn"} = [$8, 'n'];
-            $metrics{"${1}_wait_pct"} = [$9, 'I'];
-            $metrics{"${1}_busy_pct"} = [$10, 'I'];
-            $metrics{"${1}_soft_errors"} = [$11, 'I'];
-            $metrics{"${1}_hard_errors"} = [$12, 'I'];
-            $metrics{"${1}_txport_errors"} = [$13, 'I'];
-            $metrics{"${1}_total_errors"} = [$14, 'I'];
+            next unless (/^\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)$/);
+            my $device = $15;
+            $metrics{"${device}_reads_sec"} = [$1, 'n'];
+            $metrics{"${device}_writes_sec"} = [$2, 'n'];
+            $metrics{"${device}_kb_read_sec"} = [$3, 'n'];
+            $metrics{"${device}_kb_write_sec"} = [$4, 'n'];
+            $metrics{"${device}_wait_txn"} = [$5, 'n'];
+            $metrics{"${device}_actv_txn"} = [$6, 'n'];
+            $metrics{"${device}_wsvct_msec"} = [$7, 'n'];
+            $metrics{"${device}_asvct_msec"} = [$8, 'n'];
+            $metrics{"${device}_wait_pct"} = [$9, 'I'];
+            $metrics{"${device}_busy_pct"} = [$10, 'I'];
+            $metrics{"${device}_soft_errors"} = [$11, 'I'];
+            $metrics{"${device}_hard_errors"} = [$12, 'I'];
+            $metrics{"${device}_txport_errors"} = [$13, 'I'];
+            $metrics{"${device}_total_errors"} = [$14, 'I'];
         }
         if (keys %metrics) {
             return \%metrics;
