@@ -193,24 +193,26 @@ sub handler {
     } elsif ($osname eq 'linux') {
         my $interval = 5;
         my $count = 2;
-        my $output = run_command("$iostat_path -x $disk $interval $count");
-        my ($line) = (grep(/$disk\s*/, split(/\n/, $output)))[1];
-        if ($line =~ /^$disk\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*/) {
-            return {
-                "${disk}_rrqm_sec" => [$1, 'n'],
-                "${disk}_wrqm_sec" => [$2, 'n'],
-                "${disk}_reads_sec" => [$3, 'n'],
-                "${disk}_writes_sec" => [$4, 'n'],
-                "${disk}_rsec_sec" => [$5, 'n'],
-                "${disk}_wsec_sec" => [$6, 'n'],
-                "${disk}_avgrq_size" => [$7, 'n'],
-                "${disk}_avgqu_size" => [$8, 'n'],
-                "${disk}_await_msec" => [$9, 'n'],
-                "${disk}_svctm_msec" => [$10, 'n'],
-                "${disk}_util_pct" => [$11, 'n']
-            };
+        my $output = run_command("$iostat_path -x $interval $count");
+        foreach (split(/\n/, $output)) {
+            next if (/^Device\:.*/);
+            next unless (/^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+).*/);
+            $metrics{"${1}_rrqm_sec"} = [$2, 'n'];
+            $metrics{"${1}_wrqm_sec"} = [$3, 'n'];
+            $metrics{"${1}_reads_sec"} = [$4, 'n'];
+            $metrics{"${1}_writes_sec"} = [$5, 'n'];
+            $metrics{"${1}_rsec_sec"} = [$6, 'n'];
+            $metrics{"${1}_wsec_sec"} = [$7, 'n'];
+            $metrics{"${1}_avgrq_size"} = [$8, 'n'];
+            $metrics{"${1}_avgqu_size"} = [$9, 'n'];
+            $metrics{"${1}_await_msec"} = [$10, 'n'];
+            $metrics{"${1}_svctm_msec"} = [$11, 'n'];
+            $metrics{"${1}_util_pct"} = [$12, 'n'];
+        }
+        if (keys %metrics) {
+            return \%metrics;
         } else {
-            die "Unable to find disk: $disk\n";
+            die "No disks found\n";
         }
     } elsif ($osname eq 'freebsd') {
         my $interval = 5;
