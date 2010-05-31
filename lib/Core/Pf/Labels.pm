@@ -67,8 +67,7 @@ sub wildcard_handler {
     my $self = shift;
     my $config = $self->{'config'};
     my $pfctl_path = $config->{'pfctl_path'} || 'pfctl';
-    my $output = run_command("$pfctl_path -sl") ||
-        die "Unable to execute: $pfctl_path";
+    my $output = run_command("$pfctl_path -sl");
     my $osname = $^O;
     my $metrics;
 
