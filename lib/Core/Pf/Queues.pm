@@ -86,7 +86,7 @@ sub wildcard_handler {
         die "Unknown platform: $osname";
     }
 
-    die "No queues found" unless (%$metrics);
+    die "No queues found" unless ($metrics);
 
     return $metrics;
 };
