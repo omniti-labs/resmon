@@ -111,7 +111,9 @@ sub handler {
             foreach (keys %$syspages) {
                 $metrics{"kstat_${_}"} = [int($syspages->{$_} * $pagesize / 1024), 'L'] unless ($_ eq 'class');
             }
-            $metrics{'kstat_cache_mem'} = [int($kstat->{'zfs'}->{0}->{'arcstats'}->{'size'} / 1024), 'L'];
+            if (exists $kstat->{'zfs'}) {
+                $metrics{'kstat_cache_mem'} = [int($kstat->{'zfs'}->{0}->{'arcstats'}->{'size'} / 1024), 'L'];
+            }
             return \%metrics;
         } else {
             my $output = run_command("$vmstat_path");
