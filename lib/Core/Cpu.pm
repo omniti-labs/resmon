@@ -69,13 +69,13 @@ sub handler {
     $output =~ s/^\s+//;
     $output =~ s/\s+/ /g;
     if ($osname eq 'solaris') {
-        @values = (split(/\s+/, $output))[19..21];
+        @values = (split(/\s+/, $output))[-3..-1];
     } elsif ($osname eq 'linux') {
-        @values = (split(/\s+/, $output))[12..14];
+        @values = (split(/\s+/, $output))[-5..-3];
     } elsif ($osname eq 'openbsd') {
-        @values = (split(/\s+/, $output))[16..18];
+        @values = (split(/\s+/, $output))[-3..-1];
     } elsif ($osname eq 'freebsd') {
-        @values = (split(/\s+/, $output))[16..18];
+        @values = (split(/\s+/, $output))[-3..-1];
     } else {
         die "Unknown platform: $osname";
     }
