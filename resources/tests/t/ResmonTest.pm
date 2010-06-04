@@ -18,6 +18,17 @@ sub new {
     return $self;
 }
 
+
+sub handler {
+    die "Monitor not implemented. Perhaps this is a wilcard only module?\n";
+}
+
+sub wildcard_handler {
+    die "Monitor not implemented. Perhaps this is a non-wildcard module?\n";
+}
+
+1;
+
 1;
 
 package Resmon::ExtComm;
