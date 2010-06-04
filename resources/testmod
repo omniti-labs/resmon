@@ -88,18 +88,24 @@ if ($@) {
 }
 my $obj = $module->new($check_name, $kvs);
 my $metrics;
-eval { $metrics = $obj->handler(); };
+if ($check_name ne "*") {
+    eval { $metrics = { $check_name => $obj->handler() }; };
+} else {
+    eval { $metrics = $obj->wildcard_handler(); };
+}
 if ($@) {
     chomp $@;
-    $metrics = { "error" => ["$@", "s"] };
+    $metrics = { $check_name => { "error" => ["$@", "s"] } };
 }
 
-print "$module $check_name\n\n";
-for my $k (sort keys %$metrics) {
-    my $v = $metrics->{$k};
-    # Default type is auto
-    if (ref($v) ne "ARRAY") {
-        $v = [$v, "0"];
+for my $cn (sort keys %$metrics) {
+    print "$module $cn\n\n";
+    for my $k (sort keys %{$metrics->{$cn}}) {
+        my $v = $metrics->{$cn}->{$k};
+        # Default type is auto
+        if (ref($v) ne "ARRAY") {
+            $v = [$v, "0"];
+        }
+        printf "%15s = %s (%s)\n", $k , $v->[0], $v->[1];
     }
-    printf "%15s = %s (%s)\n", $k , $v->[0], $v->[1];
 }
