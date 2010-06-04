@@ -12,11 +12,11 @@ sub new {
 }
 
 sub handler {
-    die "Monitor not implemented.\n";
+    die "Monitor not implemented. Perhaps this is a wilcard only module?\n";
 }
 
 sub wildcard_handler {
-    die "Monitor not implemented.\n";
+    die "Monitor not implemented. Perhaps this is a non-wildcard module?\n";
 }
 
 sub cache_metrics {
