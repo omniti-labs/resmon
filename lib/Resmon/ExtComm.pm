@@ -39,7 +39,7 @@ sub run_command {
     my @cmd = @_;
     my $pid = open(my $r, "-|", @cmd);
     die "Can't run $cmd[0]: $!\n" unless defined($pid);
-    $children{$pid} = 1;
+    $children{$pid} = $r;
     my @lines = <$r>;
     delete $children{$pid};
     close($r);
