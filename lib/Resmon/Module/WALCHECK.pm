@@ -31,6 +31,7 @@ sub splittime {
 sub handler {
   my $arg = shift;
   my $logdir = $arg->{'logdir'};
+  my $limit = $arg->{'limit'} || 3600;
   opendir(D, $logdir);
   my @files = sort grep /^postgresql-[\d-]+_?\d*\.log$/, readdir(D);
   closedir(D);
@@ -55,7 +56,7 @@ sub handler {
   my $diff =  $lnow - $proc;
   my @tsplit = splittime((0 - $diff),60,60,24,7);
 
-  if ($diff > 3600)
+  if ($diff > $limit)
   {
     return  "BAD($diff seconds behind)";
   } else {
