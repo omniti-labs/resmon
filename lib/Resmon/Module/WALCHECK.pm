@@ -42,6 +42,9 @@ sub handler {
   # when a machine is under load
   local $/; # Make <F> read the whole file
   my @lines = grep(/LOG:  restored log file/, split('\n', <F>));
+  if ($#lines < 0) {
+    return "BAD(-99 nothing restored)";
+  }
   ($year,$month,$day,$hour,$min) = (
       $lines[-1] =~ /^(\d\d\d\d)-(\d\d)-(\d\d)\s(\d+):(\d+)/ );
   close(F);
