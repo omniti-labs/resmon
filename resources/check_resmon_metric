@@ -12,7 +12,7 @@ check_resmon_metric - Nagios check to monitor a resmon metric
 
 check_resmon_metric -H hostname [-P port] -M module_name -C check_name
                     -m metric_name [ -r regex | [-w warning_threshold]
-                    [-c critical_threshold] ]
+                    [-c critical_threshold] ] [ -u alternate_url ]
 
 =head1 DESCRIPTION
 
@@ -73,6 +73,14 @@ in conjunction with the warning/critical thresholds. Optional.
 
 This option will cause a check to be critical if it was updated more than age
 seconds ago.
+
+=item -u url
+
+Normally this check will fetch metrics from http://host:port/module/check, but
+if you are using this to check a different system that exposes metrics in a
+similar fashion to resmon, you can specify an alternate url here. You only
+need to specify the part after hostname/port. For example, if you need to hit
+http://host:port/resmon then pass -u /resmon.
 
 =back
 
@@ -158,6 +166,7 @@ if ($0 =~ m/^(.*?)[\/\\]([^\/\\]+)$/) {
 
 use strict;
 use warnings;
+
 use LWP::UserAgent;
 use HTTP::Request;
 use HTTP::Response;
@@ -170,10 +179,10 @@ use utils qw($TIMEOUT %ERRORS &print_revision &support);
 delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
 my ($port, $host, $module, $check, $age, $warning, $critical, $regex,
-    $metric) = (81,"","","",0, "", "", "");
+    $metric, $url) = (81,"","","",0, "", "", "", "");
 
 sub help {
-    print "Usage: $0 [options]";
+    print "Usage: $0 [options]\n";
     print " -H | --hostname     host to check\n";
     print " -P | --port         port that resmon runs on (default 81)\n";
     print " -M | --module       module to check\n";
@@ -185,6 +194,7 @@ sub help {
     print " -c | --critical     critical threshold (numeric metrics only)\n";
     print " -r | --regex        regex match against the metric (string";
     print " metrics only)\n";
+    print " -u | --url          specify an alternate URL to fetch\n";
     exit $ERRORS{'UNKNOWN'};
 }
 
@@ -269,7 +279,8 @@ GetOptions (
     "m|metric=s"   => \$metric,
     "w|warning=s"  => \$warning,
     "c|critical=s" => \$critical,
-    "r|regex=s"    => \$regex);
+    "r|regex=s"    => \$regex,
+    "u|url=s"      => \$url);
 
 unless ($host && $module && $check) {
     short_help();
@@ -281,7 +292,8 @@ if (($warning || $critical) && $regex) {
 }
 
 my $ua = LWP::UserAgent->new;
-my $t = HTTP::Request->new('GET', "http://$host:$port/$module/$check");
+$url = "/$module/$check" unless $url;
+my $t = HTTP::Request->new('GET', "http://$host:$port$url");
 my $xs = XML::Simple->new();
 my $state = "UNKNOWN";
 eval {
