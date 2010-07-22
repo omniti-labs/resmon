@@ -1,5 +1,5 @@
 <!ELEMENT ResmonResults (ResmonResult+)>
-<!ELEMENT ResmonResult (last_runtime_seconds, last_update, metric+, state)>
+<!ELEMENT ResmonResult (last_runtime_seconds, last_update, metric+, state?)>
 <!ATTLIST ResmonResult
        module CDATA #REQUIRED
        service CDATA #REQUIRED
@@ -9,6 +9,6 @@
 <!ELEMENT metric (#PCDATA)>
 <!ATTLIST metric
        name CDATA #REQUIRED
-       type CDATA (0|i|I|l|L|n|s) #IMPLIED
+       type (0|i|I|l|L|n|s) #IMPLIED
 >
 <!ELEMENT state (BAD|WARNING|OK)>
