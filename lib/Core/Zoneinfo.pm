@@ -92,6 +92,7 @@ sub handler {
     # Build the list of non-global zones
     my $zonelist = run_command("$zoneadm list");
     my @zones = grep {!/^global$/} split(/\n/, $zonelist);
+    my $zones = join(':', @zones);
 
     # Get stuff.  Start with the current list of mounts and test each zonepath
     # to see if it is a mountpoint.
@@ -217,6 +218,8 @@ sub handler {
         $status->{"${zone}_uptime"}     = [ $time,        "s" ];
       }
     }
+
+  $status->{"zones"} = $zones;
 
   return $status;
 };

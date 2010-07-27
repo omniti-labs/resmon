@@ -73,7 +73,16 @@ sub handler {
     my $pgrep_path = $config->{pgrep_path} || 'pgrep';
     my $full = $config->{full} ? "f" : "";
 
-    my $count = run_command("$pgrep_path", "-c$full", "$config->{pattern}");
+    my $args;
+
+    if ( $^O eq "solaris" ) {
+      my $zonename = `zonename`;
+      chomp $zonename;
+      $args .= "-z $zonename";
+    }
+
+    my @count = split(/\n/, (run_command("$pgrep_path", "$args", "$config->{pattern}")) );
+    my $count = scalar(@count);
     die "Unable to run pgrep command\n" if (!defined($count));
     chomp $count;
 
