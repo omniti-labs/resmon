@@ -1,36 +1,34 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # testmod - A simple script to test a resmon module
+# Usage:
 #
-# Runs a single check with a module, printing the result in the same format as
-# in status.txt. Useful for troubleshooting and developing resmon modules.
+# testmod Module::Name check_name key val key val
+#
+# module_name and check_name are required, the key val pairs are passed to the
+# module as its configuration.
+#
+# This script should be run from the module dir. For example, if you wanted to
+# run Core::Sample, then cd to resmon/lib (i.e. just outside the Core
+# directory), and run:
+#
+#   ../resources/testmod Core::Sample some_check_name arg1 foo arg2 bar
 
 use strict;
 use warnings;
+
+use File::Basename;
+
+# Look for modules in the current directory (for modules outside of the main
+# resmon distribution)
 use lib '.';
 
-# Hack to mark modules we provide here as already loaded
-$INC{"Resmon/ExtComm.pm"} = $0;
-
-package Resmon::ExtComm;
-
-use strict;
-use warnings;
-
-use base "Exporter";
-our @EXPORT = qw/cache_command/;
-
-sub cache_command ($$;$) {
-    my $cmd = shift;
-    `$cmd`;
-}
-1;
-
-package main;
-
-use strict;
+# Default resmon lib dir for Resmon::Module and Resmon::ExtComm
+# This assumes the testmod script is in resources/testmod. Change this (or add
+# another lib dir) if you move the testmod script.
+use lib dirname($0) . "/../lib";
 
 my $module = shift;        # Module to test
-my $check_name = shift;    # The name of the check
+my $check_name = shift;
 my $kvs = {@ARGV};
 
 if (!$module || !$check_name) {
@@ -38,32 +36,31 @@ if (!$module || !$check_name) {
     exit 1;
 }
 
-$kvs->{'object'} = $check_name;
-
-eval "use Resmon::Module::$module;";
-my $obj = bless $kvs, "Resmon::Module::$module";
-my ($st, $metrics);
-eval { ($st, $metrics) = $obj->handler(); };
+eval "use $module;";
+if ($@) {
+    print "$@\n";
+    exit 1;
+}
+my $obj = $module->new($check_name, $kvs);
+my $metrics;
+if ($check_name ne "*") {
+    eval { $metrics = { $check_name => $obj->handler() }; };
+} else {
+    eval { $metrics = $obj->wildcard_handler(); };
+}
 if ($@) {
     chomp $@;
-    $st = "BAD";
-    $metrics = { "error" => ["$@", "s"] };
-}
-if (!defined ($metrics)) {
-    # Old style return values OK(message)
-    ($st, $metrics) = $st =~ /(OK|WARNING|BAD)\((.*)\)/;
-}
-if (ref($metrics) ne "HASH") {
-    $metrics = {
-        "message" => $metrics
-    };
+    $metrics = { $check_name => { "error" => ["$@", "s"] } };
 }
 
-print "$module $kvs->{object} - $st\n\n";
-for my $k (sort keys %$metrics) {
-    my $v = $metrics->{$k};
-    if (ref($v) ne "ARRAY") {
-        $v = [$v, "0"];
+for my $cn (sort keys %$metrics) {
+    print "$module $cn\n\n";
+    for my $k (sort keys %{$metrics->{$cn}}) {
+        my $v = $metrics->{$cn}->{$k};
+        # Default type is auto
+        if (ref($v) ne "ARRAY") {
+            $v = [$v, "0"];
+        }
+        printf "%15s = %s (%s)\n", $k , $v->[0], $v->[1];
     }
-    printf "%15s = %s (%s)\n", $k , $v->[0], $v->[1];
 }

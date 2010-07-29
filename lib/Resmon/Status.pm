@@ -1,55 +1,71 @@
 package Resmon::Status;
 
 use strict;
+use warnings;
 use POSIX qw/:sys_wait_h/;
 use IO::Handle;
 use IO::File;
 use IO::Socket;
 use Socket;
 use Fcntl qw/:flock/;
-use IPC::SysV qw /IPC_PRIVATE IPC_CREAT IPC_RMID ftok S_IRWXU S_IRWXG S_IRWXO/;
 use Data::Dumper;
+use File::Basename;
 
-my $SEGSIZE = 1024*256;
 my $KEEPALIVE_TIMEOUT = 5;
 my $REQUEST_TIMEOUT = 60;
 sub new {
     my $class = shift;
     my $file = shift;
+    # State file used for communication between monitor and webserver
+    # processes
+    my $statefile = dirname($file)."/.".basename($file).".state";
+    my $fh = IO::File->new("$statefile", "+>");
+    die "$0: Unable to open $statefile: $!\n" unless (defined $fh);
+    # Delete the just opened file - it stays open, but doesn't show on disk
+    unlink ".$file.state";
     return bless {
-        file => $file
+        file => $file,
+        shared_state => $fh
     }, $class;
 }
+
 sub get_shared_state {
     my $self = shift;
-    my $blob;
-    my $len;
-    return unless(defined($self->{shared_state}));
-    # Lock shared segment
-    # Read in
-    shmread($self->{shared_state}, $len, 0, length(pack('i', 0)));
-    $len = unpack('i', $len);
-    shmread($self->{shared_state}, $blob, length(pack('i', 0)), $len);
-    # unlock
-    my $VAR1;
-    eval $blob;
-    die $@ if ($@);
-    $self->{store} = $VAR1;
+    my $fh = $self->{shared_state};
+    if (defined $fh) {
+        flock($fh, LOCK_EX); # Obtain a lock on the file
+        my $VAR1;
+        $fh->seek(0, 0);
+        my $blob;
+        {
+            local $/ = undef;
+            $blob = <$fh>;
+        }
+        flock($fh, LOCK_UN); # Release the lock
+        eval $blob;
+        die $@ if ($@);
+        $self->{store} = $VAR1;
+    } else {
+        die "Unable to read shared state";
+    };
     return $self->{store};
 }
+
 sub store_shared_state {
     my $self = shift;
-    return unless(defined($self->{shared_state}));
-    my $blob = Dumper($self->{store});
-
-    # Lock shared segment
-    # Write state and flush
-    shmwrite($self->{shared_state}, pack('i', length($blob)),
-        0, length(pack('i', 0))) || die "$!";
-    shmwrite($self->{shared_state}, $blob, length(pack('i', 0)),
-        length($blob)) || die "$!";
-    # unlock
+    my $fh = $self->{shared_state};
+    if (defined($fh)) {
+        flock($fh, LOCK_EX); # Obtain a lock on the file
+        $fh->truncate(0);
+        $fh->seek(0,0);
+        print $fh Dumper($self->{store});
+        $fh->flush();
+        flock($fh, LOCK_UN); # Release the lock
+    } else {
+        die "Unable to store shared state";
+    };
 }
+
 sub xml_kv_dump {
     my $info = shift;
     my $indent = shift || 0;
@@ -79,6 +95,7 @@ sub xml_kv_dump {
     }
     return $rv;
 }
+
 sub xml_info {
     my ($module, $service, $info) = @_;
     my $rv = '';
@@ -87,6 +104,7 @@ sub xml_info {
     $rv .= "  </ResmonResult>\n";
     return $rv;
 }
+
 sub xml_escape {
     my $v = shift;
     $v =~ s/&/&amp;/g;
@@ -95,6 +113,7 @@ sub xml_escape {
     $v =~ s/'/&apos;/g;
     return $v;
 }
+
 sub dump_generic {
     my $self = shift;
     my $dumper = shift;
@@ -106,6 +125,7 @@ sub dump_generic {
     }
     return $rv;
 }
+
 sub dump_generic_module {
     # Dumps a single module rather than all checks
     my $self = shift;
@@ -117,33 +137,6 @@ sub dump_generic_module {
         $rv .= $dumper->($module,$service,$info);
     }
     return $rv;
-}
-sub dump_generic_state {
-    # Dumps only checks with a specific state
-    my $self = shift;
-    my $dumper = shift;
-    my $state = shift;
-    my $rv = '';
-    while(my ($module, $services) = each %{$self->{store}}) {
-        while(my ($service, $info) = each %$services) {
-            if ($info->{state} eq $state) {
-                $rv .= $dumper->($module,$service,$info);
-            }
-        }
-    }
-    return $rv;
-}
-sub dump_oldstyle {
-    my $self = shift;
-    my $response = $self->dump_generic(sub {
-            my($module,$service,$info) = @_;
-            my $message = $info->{metric}->{message};
-            if (ref $message eq "ARRAY") {
-                $message = $message->[0];
-            }
-            return "$service($module) :: $info->{state}($message)\n";
-        });
-    return $response;
 }
 sub dump_xml {
     my $self = shift;
@@ -169,12 +162,6 @@ sub get_xsl() {
     <link rel="stylesheet" type="text/css" href="/resmon.css" />
 </head>
 <body>
-    <ul class="navbar">
-        <li><a href="/">List all checks</a></li>
-        <li><a href="/BAD">List all checks that are BAD</a></li>
-        <li><a href="/WARNING">List all checks that are WARNING</a></li>
-        <li><a href="/OK">List all checks that are OK</a></li>
-    </ul>
     <p>
     Total checks:
     <xsl:value-of select="count(ResmonResult)" />
@@ -183,9 +170,6 @@ sub get_xsl() {
         <xsl:sort select="\@module" />
         <xsl:sort select="\@service" />
         <div class="item">
-                <xsl:attribute name="class">
-                    item <xsl:value-of select="state" />
-                </xsl:attribute>
             <div class="info">
                 Last check: <xsl:value-of select="last_runtime_seconds" />
                 /
@@ -204,19 +188,14 @@ sub get_xsl() {
                     </xsl:attribute>
                     <xsl:value-of select="\@service" />
                 </a>
-                -
-                <xsl:value-of select="state"/>:
-                <xsl:value-of select="metric[attribute::name='message']" />
             </h1>
-            <xsl:if test="count(metric[attribute::name!='message']) > 0">
-                <ul>
-                    <xsl:for-each select="metric[attribute::name!='message']">
-                        <xsl:sort select="\@name" />
-                        <li><xsl:value-of select="\@name" /> = 
-                        <xsl:value-of select="." /></li>
-                    </xsl:for-each>
-                </ul>
-            </xsl:if>
+            <ul>
+                <xsl:for-each select="metric">
+                    <xsl:sort select="\@name" />
+                    <li><xsl:value-of select="\@name" /> = 
+                    <xsl:value-of select="." /></li>
+                </xsl:for-each>
+            </ul>
         </div>
     </xsl:for-each>
 </body>
@@ -258,21 +237,6 @@ h2 {
     margin: 0;
 }
 
-.OK {
-    background-color: #afa;
-    border-left: 10px solid #393;
-}
-
-.WARNING {
-    background-color: #ffa;
-    border-left: 10px solid #993;
-}
-
-.BAD {
-    background-color: #faa;
-    border-left: 10px solid #933;
-}
-
 table {
     border: 1px solid black;
     background-color: #eeeeee;
@@ -297,20 +261,6 @@ a {
     text-decoration: none;
 }
 
-ul.navbar {
-    list-style: none;
-    font-size: 80%;
-}
-
-ul.navbar li {
-    display: inline;
-    padding-left: 1em;
-    padding-right: 1em;
-    margin-right: -1px;
-    border-left: 1px solid black;
-    border-right: 1px solid black;
-}
-
 a.metrics, a.metrics:visited {
     color: black;
 }
@@ -331,11 +281,12 @@ EOF
     ;
     return $response;
 }
+
 sub service {
     my $self = shift;
     my ($client, $req, $proto, $snip, $authuser, $authpass) = @_;
     my $state = $self->get_shared_state();
-    if ($self->{authuser} ne "" &&
+    if (defined($self->{authuser}) && $self->{authuser} ne "" &&
         ($authuser ne $self->{authuser} || $authpass ne $self->{authpass})) {
         my $response = "<html><head><title>Password required</title></head>" .
         "<body><h1>Password required</h1></body></html>";
@@ -343,14 +294,9 @@ sub service {
                 "WWW-Authenticate: Basic realm=\"Resmon\"\n"));
         $client->print($response . "\r\n");
         return;
-    } elsif($req eq '/' or $req eq '/status') {
+    } elsif($req eq '/') {
         my $response .= $self->dump_xml();
         $client->print(http_header(200, length($response), 'text/xml', $snip));
-        $client->print($response . "\r\n");
-        return;
-    } elsif($req eq '/status.txt') {
-        my $response = $self->dump_oldstyle();
-        $client->print(http_header(200, length($response), 'text/plain', $snip));
         $client->print($response . "\r\n");
         return;
     } elsif($req eq '/resmon.xsl') {
@@ -368,7 +314,7 @@ sub service {
             exists($self->{store}->{$1}->{$2})) {
             my $info = $self->{store}->{$1}->{$2};
             my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
             $response .= "<ResmonResults>\n".
             xml_info($1,$2,$info).
             "</ResmonResults>\n";
@@ -377,18 +323,9 @@ sub service {
             return;
         }
     } elsif($req =~ /^\/([^\/]+)$/) {
-        if ($1 eq "BAD" || $1 eq "OK" || $1 eq "WARNING") {
+        if(exists($self->{store}->{$1})) {
             my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
-            $response .= "<ResmonResults>\n".
-            $self->dump_generic_state(\&xml_info,$1) .
-            "</ResmonResults>\n";
-            $client->print(http_header(200, length($response), 'text/xml', $snip));
-            $client->print( $response . "\r\n");
-            return;
-        } elsif(exists($self->{store}->{$1})) {
-            my $response = qq^<?xml version="1.0" encoding="UTF-8"?>\n^;
-            my $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
+            $response .= qq^<?xml-stylesheet type="text/xsl" href="/resmon.xsl"?>^;
             $response .= "<ResmonResults>\n".
             $self->dump_generic_module(\&xml_info,$1) .
             "</ResmonResults>\n";
@@ -399,17 +336,19 @@ sub service {
     }
     die "Request not understood\n";
 }
+
 sub http_header {
     my $code = shift;
     my $len = shift;
     my $type = shift || 'text/xml';
     my $close_connection = shift || 1;
-    my $extra_headers = shift;
+    my $extra_headers = shift || "";
     return "HTTP/1.0 $code OK\nServer: resmon\n" .
         (defined($len) ? "Content-length: $len\n" : "") .
     (($close_connection || !$len) ? "Connection: close\n" : "") .
     "Content-Type: $type; charset=utf-8\n" . $extra_headers . "\n";
 }
+
 sub base64_decode($) {
     # Base64 decoding for basic auth
     # We cheat when doing the decoding - perl can do uudecoding using unpack -
@@ -425,6 +364,7 @@ sub base64_decode($) {
     # beginning
     return unpack("u", $len.$enc);
 }
+
 sub serve_http_on {
     my $self = shift;
     my $ip = shift;
@@ -440,24 +380,17 @@ sub serve_http_on {
 
     my $handle = IO::Socket->new();
     socket($handle, PF_INET, SOCK_STREAM, getprotobyname('tcp'))
-    || die "socket: $!";
+        || die "socket: $!";
     setsockopt($handle, SOL_SOCKET, SO_REUSEADDR, pack("l", 1))
-    || die "setsockopt: $!";
+        || die "setsockopt: $!";
     bind($handle, sockaddr_in($port, $ip))
-    || die "bind: $!";
+        || die "bind: $!";
     listen($handle,SOMAXCONN);
 
-    $self->{zindex} = 0;
-    if (-x "/usr/sbin/zoneadm") {
-        open(Z, "/usr/sbin/zoneadm list -p |");
-        my $firstline = <Z>;
-        close(Z);
-        ($self->{zindex}) = split /:/, $firstline, 2;
-    }
     $self->{http_port} = $port;
     $self->{http_ip} = $ip;
-    $self->{ftok_number} = $port * (1 + $self->{zindex});
 
+    $self->{parent_pid} = $$;
     $self->{child} = fork();
     if($self->{child} == 0) {
         eval {
@@ -536,13 +469,13 @@ sub serve_http_on {
     close($handle);
     return;
 }
+
 sub open {
     my $self = shift;
     return 0 unless(ref $self);
-    return 1 if($self->{handle});  # Alread open
+    return 1 if($self->{handle});  # Already open
     if($self->{file} eq '-' || !defined($self->{file})) {
-        $self->{handle_is_stdout} = 1;
-        $self->{handle} = IO::File->new_from_fd(fileno(STDOUT), "w");
+        # We'll use stdout instead - no file handle needed
         return 1;
     }
     $self->{handle} = IO::File->new("> $self->{file}.swap");
@@ -550,67 +483,43 @@ sub open {
     $self->{swap_on_close} = 1; # move this to a non .swap version on close
     chmod 0644, "$self->{file}.swap";
 
-    unless(defined($self->{shared_state})) {
-        $self->{shared_state} = shmget(IPC_PRIVATE, $SEGSIZE,
-            IPC_CREAT|S_IRWXU|S_IRWXG|S_IRWXO);
-        die "$0: $!" if($self->{shared_state} == -1);
-    }
     return 1;
 }
+
 sub store {
     my ($self, $type, $name, $info) = @_;
     %{$self->{store}->{$type}->{$name}} = %$info;
     $self->{store}->{$type}->{$name}->{last_update} = time;
     $self->store_shared_state();
-    my $message = $info->{metric}->{message};
-    if (ref $message eq "ARRAY") {
-        $message = $message->[0];
+}
+
+sub clear {
+    # Clear all state after a reload
+    my $self = shift;
+    $self->{store} = {};
+    $self->store_shared_state;
+}
+
+sub write {
+    # Writes the metrics output for a single check to stdout and/or a file
+    my ($self, $module_name, $check_name, $metrics, $debug) = @_;
+    my $metrics_output = "$module_name`$check_name\n";
+    while (my ($k, $v) = each (%$metrics)) {
+        if (ref($v) eq "ARRAY") {
+            $v = $v->[0];
+        }
+        $metrics_output .= "    $k = $v\n";
     }
     if($self->{handle}) {
-        $self->{handle}->print("$name($type) :: $info->{state}($message)\n");
-    } else {
-        print "$name($type) :: $info->{state}($message)\n";
+        $self->{handle}->print($metrics_output);
+    }
+    if (!$self->{handle} || $debug) {
+        print $metrics_output;
     }
 }
-sub purge {
-    # This removes status information for modules that are no longer loaded
 
-    # Generate list of current modules
-    my %loaded = ();
-    my ($self, $config) = @_;
-    while (my ($type, $mods) = each(%{$config->{Module}}) ) {
-        $loaded{$type} = ();
-        foreach (@$mods) {
-            $loaded{$type}{$_->{'object'}} = 1;
-        }
-    }
-
-    # Debugging
-    #while (my ($key, $value) = each(%loaded) ) {
-    #    print STDERR "$key: ";
-    #    while (my ($mod, $dummy) = each (%$value) ) {
-    #        print STDERR "$mod ";
-    #    }
-    #    print "\n";
-    #}
-
-    # Compare $self->{store} with list of loaded modules
-    while (my ($type, $value) = each (%{$self->{store}})) {
-        while (my ($name, $value2) = each (%$value)) {
-            if (!exists($loaded{$type}) || !exists($loaded{$type}{$name})) {
-                #print STDERR "$type $name\n";
-                delete $self->{store}->{$type}->{$name};
-                if (scalar(keys %{$self->{store}->{$type}}) == 0) {
-                    #print STDERR "$type has no more objects, deleting\n";
-                    delete $self->{store}->{$type};
-                }
-            }
-        }
-    }
-}
 sub close {
     my $self = shift;
-    return if($self->{handle_is_stdout});
     $self->{handle}->close() if($self->{handle});
     $self->{handle} = undef;
     if($self->{swap_on_close}) {
@@ -620,17 +529,17 @@ sub close {
         delete($self->{swap_on_close});
     }
 }
+
 sub DESTROY {
     my $self = shift;
+    # Make sure we're really the parent process
+    return if ($self->{parent_pid} != $$);
     my $child = $self->{child};
-    if($child) {
+    if ($child) {
         kill 15, $child;
         sleep 1;
         kill 9, $child if(kill 0, $child);
         waitpid(-1,WNOHANG);
-    }
-    if(defined($self->{shared_state})) {
-        shmctl($self->{shared_state}, IPC_RMID, 0);
     }
 }
 1;

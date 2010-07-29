@@ -1,0 +1,350 @@
+#!/usr/bin/perl -w
+# Remove the following line to disable embedded perl
+# nagios: +epn
+
+=pod
+
+=head1 NAME
+
+check_resmon_metric - Nagios check to monitor a resmon metric
+
+=head1 SYNOPSIS
+
+check_resmon_metric -H hostname [-P port] -M module_name -C check_name
+                    -m metric_name [ -r regex | [-w warning_threshold]
+                    [-c critical_threshold] ] [ -u alternate_url ]
+
+=head1 DESCRIPTION
+
+This is a nagios check script that will connect to a running resmon instance,
+fetch information for a single check, and compare a metric against rules
+provided on the command line, returning the status to nagios based on the
+result.
+
+For numeric metrics, there are options for warning/critical thresholds, and
+for string metrics, there is an option to match against a regular expression.
+
+=head1 OPTIONS
+
+=over
+
+=item -H hostname
+
+The hostname of the resmon instance to connect to. Required.
+
+=item -P port
+
+The port that resmon is listening on. Defaults to 81.
+
+=item -M module_name
+
+The module name of the check you wish to fetch. Required.
+
+=item -C check_name
+
+The check name you wish to fetch. Required.
+
+=item -m metric_name
+
+The name of the metric you wish to evaluate rules against. Required.
+
+=item -w warning_threshold
+
+A numeric threshold (see below) to test the metric against. Will return a
+warning status if the threshold matches. This is only applicable for numeric
+metrics. An error will be returned for string metrics. Optional.
+
+=item -c critical_threshold
+
+A numeric threshold (see below) to test the metric against. Will return a
+critical status if the threshold matches. This is only applicable for numeric
+metrics. An error will be returned for string metrics. If both the critical
+and warning thresholds match a given metric, then the status returned is
+critical.  Optional.
+
+=item -r regex
+
+A regular expression to match the metric against. This is most useful for
+string based metrics. If the regular expression matches, then an ok status
+will be returned, otherwise the status will be critical. This cannot be used
+in conjunction with the warning/critical thresholds. Optional.
+
+=item -A age
+
+This option will cause a check to be critical if it was updated more than age
+seconds ago.
+
+=item -u url
+
+Normally this check will fetch metrics from http://host:port/module/check, but
+if you are using this to check a different system that exposes metrics in a
+similar fashion to resmon, you can specify an alternate url here. You only
+need to specify the part after hostname/port. For example, if you need to hit
+http://host:port/resmon then pass -u /resmon.
+
+=back
+
+=head1 THRESHOLDS
+
+The warning and critical thresholds are specified in the same way as for other
+nagios plugins, as desribed at
+http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT
+
+Most of the time, you just want to put a number for the threshold. For
+example, '-w 10 -c 20' would go warning if the value is over 10, and critical
+if it is over 20.
+
+For more complex ranges, use the more generalized format of: [@]start:end
+
+=over
+
+=item *
+
+Start and end are both numbers, and either can be negative
+
+=item *
+
+If start is missing, then the colon isn't required, and the range is from 0 to
+end. In other words, if you specify a single number, the range is from 0 to
+the number you specified.
+
+=item *
+
+If end is missing (E.g. 10:), then the range is from start to infinity.
+
+=item *
+
+If start is '~', then the range is from minus infinity to end (as opposed to
+0-end if start is omitted)
+
+=item *
+
+An alert is generated if the test value lies outside the specified range.
+
+=item *
+
+If @ is specified at the beginning, the alerting behavior is flipped. In other
+words, an alert is generated if the value lies within the range.
+
+=back
+
+=head2 EXAMPLES
+
+The following lists example thresholds, and the conditions under which an
+alert is generated.
+
+=over
+
+=item '10'
+
+Ok if: 0 <= X <= 10, Alert if: X < 0 or X > 10
+
+=item '10:'
+
+Ok if: X >= 10, Alert if: X < 10
+
+=item '~:10'
+
+Ok if: X <= 10, Alert if: X > 10
+
+=item '10:20'
+
+Ok if: 10 <= X <= 20, Alert if: X < 10 or X > 20
+
+=item '@10:20'
+
+Ok if: X < 10 or X > 20, Alert if: 10 <= X <= 20
+
+=back
+
+=cut
+
+use vars qw($PROGNAME);
+if ($0 =~ m/^(.*?)[\/\\]([^\/\\]+)$/) {
+        $PROGNAME = $2;
+}
+
+use strict;
+use warnings;
+
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
+use Time::HiRes qw( gettimeofday tv_interval );
+use XML::Simple;
+use Getopt::Long;
+
+use utils qw($TIMEOUT %ERRORS &print_revision &support);
+
+delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
+my ($port, $host, $module, $check, $age, $warning, $critical, $regex,
+    $metric, $url) = (81,"","","",0, "", "", "", "");
+
+sub help {
+    print "Usage: $0 [options]\n";
+    print " -H | --hostname     host to check\n";
+    print " -P | --port         port that resmon runs on (default 81)\n";
+    print " -M | --module       module to check\n";
+    print " -C | --check        name of individual check\n";
+    print " -A | --age          how recently should the check have been";
+    print " updated\n";
+    print " -m | --metric       metric name to check\n";
+    print " -w | --warning      warning threshold (numeric metrics only)\n";
+    print " -c | --critical     critical threshold (numeric metrics only)\n";
+    print " -r | --regex        regex match against the metric (string";
+    print " metrics only)\n";
+    print " -u | --url          specify an alternate URL to fetch\n";
+    exit $ERRORS{'UNKNOWN'};
+}
+
+sub short_help {
+    print "Usage: $0 -H host -M module -C check -m metric [options]\n";
+    print "run $0 --help for more information\n";
+    exit $ERRORS{'UNKNOWN'};
+}
+
+sub check_threshold {
+    my ($value, $warning, $critical) = @_;
+    my ($state, $message, $warnmessage, $critmessage) = (0,"","","");
+    if ($critical) {
+        ($state, $critmessage) = check_single_threshold($value, $critical);
+        if (!$state) {
+            return ("CRITICAL", $critmessage);
+        }
+        $message = $critmessage;
+    }
+    if ($warning) {
+        ($state, $warnmessage) = check_single_threshold($value, $warning);
+        if (!$state) {
+            return ("WARNING", $warnmessage);
+        }
+        if ($message) {
+            $message .= " and $warnmessage";
+        } else {
+            $message = $warnmessage;
+        }
+    }
+    return ("OK", $message);
+}
+
+sub check_single_threshold {
+    my ($value, $threshold) = @_;
+    my ($inclusive, $start, $end) = (
+        $threshold =~ /(\@?)(?:(-?[0-9.]+|~):)?(-?[0-9.]+|~)?/);
+    $start ||= 0;
+    $end ||= "";
+    my $message;
+    my $goodmessage;
+    my $badmessage;
+
+    my $state = 1;
+    if ($start eq "~") {
+        $badmessage = "$value > $end";
+        $goodmessage = "$value <= $end";
+        if ($value > $end) {
+            $state = 0;
+        }
+    } elsif ($end eq "") {
+        $badmessage = "$value < $start";
+        $goodmessage = "$value >= $start";
+        if ($value < $start) {
+            $state = 0;
+        }
+    } else {
+        $badmessage = "$value outside range ($start to $end)";
+        $goodmessage = "$start <= $value <= $end";
+        if ($value < $start || $value > $end) {
+            $state = 0;
+        }
+    }
+
+    $message = $state ? $goodmessage : $badmessage;
+
+    # Negate the result if inclusive
+    if ($inclusive) {
+        $state = $state ? 0 : 1;
+    }
+    return ($state, $message);
+}
+
+Getopt::Long::Configure('bundling', 'no_ignore_case');
+GetOptions (
+    "h|help"       => \&help,
+    "H|host=s"     => \$host,
+    "P|port=i"     => \$port,
+    "M|module=s"   => \$module,
+    "C|check=s"    => \$check,
+    "A|age=i"      => \$age,
+    "m|metric=s"   => \$metric,
+    "w|warning=s"  => \$warning,
+    "c|critical=s" => \$critical,
+    "r|regex=s"    => \$regex,
+    "u|url=s"      => \$url);
+
+unless ($host && $module && $check) {
+    short_help();
+}
+
+if (($warning || $critical) && $regex) {
+    print "Cannot specify both numeric thresholds and a string based match\n";
+    exit $ERRORS{'UNKNOWN'};
+}
+
+my $ua = LWP::UserAgent->new;
+$url = "/$module/$check" unless $url;
+my $t = HTTP::Request->new('GET', "http://$host:$port$url");
+my $xs = XML::Simple->new();
+my $state = "UNKNOWN";
+eval {
+    my $ref;
+    # Make the HTTP request
+    my $res = $ua->request($t);
+    die "CRITICAL: could not fetch\n" unless($res && $res->is_success);
+    # Parse the xml
+    eval { $ref = $xs->XMLin($res->content, ForceArray => 1); };
+    die "CRITICAL: error parsing XML\n" if($@);
+
+    # Debugging
+    #use Data::Dumper;
+    #print Dumper($ref->{ResmonResult});
+
+    # If we have stale information, then go critical
+    my $last_update = time() - $ref->{ResmonResult}->[0]->{last_update}->[0];
+    die "Stale metrics. Last updated $last_update seconds ago"
+        if($age && $age < $last_update);
+
+    # Get the metrics
+    my $metricval = $ref->{ResmonResult}->[0]->{metric}->{$metric};
+    my $value = $metricval->{content};
+    my $type = $metricval->{type} || "0";
+
+    # Note: if type is auto (0), then we assume it can be treated as a number
+    # of some sort. If you're specifying a warning/critical threshold, then
+    # you are too.
+    die "Numeric threshold specified for a non-numeric metric"
+        if (($warning || $critical) && $type !~ /[0IlLn]/);
+
+    if ($regex) {
+        if ($value =~ /$regex/) {
+            $state = "OK";
+        } else {
+            $state = "CRITICAL";
+        }
+        print "$state: $value\n";
+    }
+
+    if ($warning || $critical) {
+        my $message;
+        ($state, $message) = check_threshold($value, $warning, $critical);
+        print "$state: $metric - $message\n";
+    }
+};
+
+if($@) {
+    chomp($@);
+    print "CRITICAL: $@\n";
+    exit $ERRORS{'CRITICAL'};
+} else {
+    exit $ERRORS{$state};
+}

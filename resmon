@@ -7,6 +7,7 @@ BEGIN {
 };
 
 use strict;
+use warnings;
 use Time::HiRes qw( gettimeofday tv_interval sleep );
 use POSIX qw( :sys_wait_h setsid );
 use Getopt::Long;
@@ -17,7 +18,6 @@ $status $update);
 use Resmon::Config;
 use Resmon::ExtComm;
 use Resmon::Status;
-use Resmon::Module;
 
 GetOptions(
     "i=s" => \$interface,
@@ -44,45 +44,11 @@ sub configure {
     $config->{interface} = $interface if($interface);
 }
 
-sub reconfigure {
-    my $modstatus = "";
-    print STDERR "Reloading modules...\n";
-    my $modules = $config->{Module};
-    while ( my ($key, $value) = each(%$modules) ) {
-        my $mod = $value->[0]; # Only need the first of each module
-        # Called this way rather than $mod->reload_module() in order to deal
-        # with modules that failed to load on startup and won't have a
-        # reload_module method.
-        my $errs = Resmon::Module::reload_module($mod);
-        if ($errs) {
-            my $modname = ref($mod) || $mod;
-            $modname =~ s/Resmon::Module:://;
-            $modstatus .= "$modname ";
-            print STDERR " Failed to reload module $modname\n";
-            print STDERR $errs;
-            print STDERR " This module is no longer available.\n";
-        }
-    }
-    print STDERR "Reloading configuration...\n";
-    eval { configure(); };
-    if ($@) {
-        # The config object is recreated every time we reload, so we shouldn't
-        # need to reset this BAD value to empty on a successful load.
-        $config->{'configstatus'} = "BAD";
-        print STDERR " Failed to reload: ";
-        print STDERR $@;
-        print STDERR " Continuing with old configuration\n";
-    }
-
-    $config->{'modstatus'} = $modstatus;
-    $status->purge($config);
-}
+configure();
 
 my $sighup = 0;
 sub sighup_handler { $sighup = 1; }
 $SIG{'HUP'} = \&sighup_handler;
-
-configure();
 
 my $sigint = 0;
 sub sigint_handler { $sigint = 1; }
@@ -118,77 +84,69 @@ my $list = [];
 $status = Resmon::Status->new($config->{statusfile});
 $status->open();
 $status->serve_http_on($config->{interface}, $config->{port},
-    $config->{authuser}, $config->{authpass})
-if($config->{port});
+        $config->{authuser}, $config->{authpass})
+    if($config->{port});
 
 while(1) {
     while(my($module_name, $mod_configs) = each %{$config->{Module}}) {
-        my $coderef = undef;
-        eval { $coderef = Resmon::Module::fetch_monitor($module_name); };
-        foreach my $monobj (@$mod_configs) {
-            my $check_rv = 'BAD',
-            my $check_metric = 'no data';
+        while(my($check_name, $monitor_obj) = each %$mod_configs) {
+            my $check_metrics = {};
             my $starttime = [gettimeofday];
             # Get old status if it hasn't expired
-            my ($check_rv, $check_metric) = Resmon::Module::fresh_status_msg(
-                $monobj);
+            $check_metrics = $monitor_obj->get_cached_metrics();
             # Otherwise, run the check
-            if (!$check_rv) {
-                my $timeout = $monobj->{'check_timeout'} ||
+            if (!$check_metrics) {
+                my $timeout = $monitor_obj->{'check_timeout'} ||
                     $config->{'timeout'};
                 alarm($timeout);
+                my $handler;
                 eval {
                     local $SIG{ALRM} = sub { die "alarm\n" };
-                    if($coderef) {
-                        ($check_rv, $check_metric) = $coderef->($monobj);
+                    if ($check_name eq "*") {
+                        $check_metrics = $monitor_obj->wildcard_handler;
                     } else {
-                        ($check_rv, $check_metric) = $monobj->handler();
+                        $check_metrics = {
+                            $check_name => $monitor_obj->handler
+                        };
                     }
                 };
                 alarm 0;
-                # Store the last status for use by fresh_status_msg later
-                # Also converts old style status messages
-                ($check_rv, $check_metric) =
-                Resmon::Module::set_status($monobj, $check_rv, $check_metric);
-            }
-            my $checkstat = $@;
-            my $confighash = {};
-            eval { $confighash = $monobj->config_as_hash(); };
-            my $results = {
-                #configuration => $confighash,
-                last_runtime_seconds => sprintf("%.6f", tv_interval($starttime))
+                # Store the last metrics for use by fresh_status_msg later
+                $monitor_obj->cache_metrics($check_metrics);
             };
-            if($checkstat) {
-                $results->{state} = 'BAD';
-                $results->{metric} = { "message" =>
-                    "Bad module or problem running handler code."};
-                if ($checkstat eq "alarm\n") {
-                    $results->{metric} = { "message" =>
-                        "Check timeout"};
-                    Resmon::ExtComm::clean_up;
+            my $checkproblem = $@;
+            if($checkproblem) {
+                chomp $checkproblem;
+                if ($checkproblem eq "alarm") {
+                    $checkproblem = "Check timeout";
                 }
-            } else {
-                $results->{state} = $check_rv;
-                if (ref($check_metric) eq "HASH") {
-                    my $metric = {};
-                    while(my ($k, $v) = each %$check_metric) {
-                        $metric->{$k} = $v;
-                    }
-                    $results->{metric} = $metric;
-                } else {
-                    $results->{metric} = { "message" => $check_metric };
-                }
+                $check_metrics = {
+                    $check_name => {"error" => ["$checkproblem", "s"]}
+                };
+                Resmon::ExtComm::clean_up;
             }
-            $status->store($module_name,$monobj->{'object'}, $results);
-            printf("%s: %s\n%s\n", $module_name, $monobj->{'object'},
-                Dumper($results)) if $debug;
+            foreach my $name (keys %$check_metrics) {
+                my $results = {
+                    last_runtime_seconds => sprintf("%.6f",
+                        tv_interval($starttime)),
+                    metric => $check_metrics->{$name}
+                };
+                $status->store($module_name,$name, $results);
+                $status->write($module_name,$name, $results->{'metric'},
+                    $debug);
+            }
         }
     }
     $status->close();
     die "Exiting.\n" if($sigint);
     if ($sighup) {
+        # Reload configuration (and modules) on SIGHUP
         $sighup = 0;
-        reconfigure();
+        print STDERR "Reloading modules\n";
+        $config = Resmon::Config->new($config_file);
+        # Needed to ensure any removed modules do not continue to show in the
+        # web interface
+        $status->clear();
     } else {
         reap_zombies();
         wait_interval();

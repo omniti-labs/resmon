@@ -1,61 +1,102 @@
 package Resmon::Config;
 
 use strict;
+use warnings;
+
+use Sys::Hostname;
 
 sub new {
     my $class = shift;
     my $filename = shift;
-    my $self = bless {
+    my $self = shift; # Allows calling this recursively - you can pass in self
+    $self ||= bless {
         configfile => $filename,
-        modstatus => '',
+        modstatus => [],
         # Defaults
-        timeout => 10
+        timeout => 10,
+        Module => {}
     }, $class;
-    open(CONF, "<$filename") || return undef;
+    my $conf;
+    open($conf, "<$filename") ||
+        die "Unable to open configuration file $filename";
 
     my $current;
     my $line = 0;
-    while(<CONF>) {
+    my $oldline = '';
+    while(<$conf>) {
+        chomp;
         $line++;
         next if /^\s*#/;
         next if /^\s*$/;
+
+        # Line continuation
+        if ($oldline) {
+            $_ = $oldline . $_;
+            $oldline = '';
+        }
+        if (/\\$/) {
+            $_ =~ s/\\$//;
+            $oldline = $_;
+            next;
+        }
+
         if($current) {
             if(/^\s*([^:\s](?:[^:]*[^:\s])?)\s*:\s*(.+)\s*$/) {
-                my %kvs;
-                $kvs{'type'} = $current;
-                $kvs{'object'} = $1;
+                next if $current eq "BAD_MODULE";
+                my $kvs = {};
+                my $check_name = $1;
                 my @params = split(/,/, $2);
-                grep { $kvs{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
+                grep { $kvs->{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
                     @params;
-                my $object = bless \%kvs, "Resmon::Module::$current";
-                push(@{$self->{Module}->{$current}}, $object);
-
-                # Test to make sure the module actually works
-                my $coderef;
-                eval { $coderef = Resmon::Module::fetch_monitor($current); };
-                if (!$coderef) {
-                    # Try to execute the config_as_hash method. If it fails,
-                    # then the module didn't load properly (e.g. syntax
-                    # error).
-                    eval { $object->config_as_hash; };
-                    if ($@) {
-                        # Module failed to load, print error and add to failed
-                        # modules list.
-                        print STDERR "Problem loading module $current\n";
-                        print STDERR "This module will not be available\n";
-                        $self->{'modstatus'} .= "$current ";
-                    }
+                my $object;
+                eval "\$object = $current->new(\$check_name, \$kvs);";
+                if ($@) {
+                    print STDERR "Problem with check $current\`$check_name:\n";
+                    print STDERR "$@\n";
+                    print STDERR "This check will not be available\n";
+                    push @{$self->{modstatus}}, "$current`$check_name";
+                    next;
                 }
-
+                if (!$object->isa("Resmon::Module")) {
+                    print STDERR "Module $current isn't of type ";
+                    print STDERR "Resmon::Module. Check $current`$check_name ";
+                    print STDERR "will not be available\n";
+                    push @{$self->{modstatus}}, "$current`$check_name";
+                    next;
+                }
+                $self->{Module}->{$current}->{$check_name} = $object;
             } elsif (/^\s*\}\s*$/) {
                 $current = undef;
             } else {
-                die "Syntax Error on line $line\n";
+                die "Syntax Error in config file $filename on line $line\n";
             }
         } else {
             if(/\s*(\S+)\s*\{/) {
                 $current = $1;
-                $self->{Module}->{$current} = [];
+
+                # Delete the module from %INC if it exists. This will reload
+                # any module if needed.
+                my $mod_filename = "$current.pm";
+                $mod_filename =~ s/::/\//g;
+                delete $INC{$mod_filename};
+                {
+                    local($SIG{__WARN__}) = sub {
+                        if($_[0] =~ /[Ss]ubroutine ([\w:]+) redefined/ ) {
+                            return;
+                        }
+                        warn @_;
+                    };
+                    eval "use $current;";
+                }
+                if ($@) {
+                    print STDERR "Problem loading monitor $current:\n";
+                    print STDERR "$@\n";
+                    print STDERR "This module will not be available\n";
+                    push @{$self->{modstatus}}, $current;
+                    $current = "BAD_MODULE";
+                    next;
+                }
+                $self->{Module}->{$current} ||= {};
                 next;
             }
             elsif(/\S*LIB\s+(\S+)\s*;\s*/) {
@@ -82,16 +123,26 @@ sub new {
                 $self->{timeout} = $1;
                 next;
             }
-            elsif(/\S*AUTHUSER\s+(\S+)\s*;\s*/) {
+            elsif(/\s*AUTHUSER\s+(\S+)\s*;\s*/) {
                 $self->{authuser} = $1;
                 next;
             }
-            elsif(/\S*AUTHPASS\s+(\S+)\s*;\s*/) {
+            elsif(/\s*AUTHPASS\s+(\S+)\s*;\s*/) {
                 $self->{authpass} = $1;
                 next;
-            }
-            else {
-                die "Syntax Error on line $line\n";
+            } elsif(/\s*INCLUDE\s+(\S+)\s*;\s*/) {
+                my $incglob = $1;
+
+                # Apply percent substitutions
+                my $HOSTNAME = hostname; # Uses Sys::Hostname
+                $incglob =~ s/%h/$HOSTNAME/g;
+                $incglob =~ s/%o/$^O/g;
+
+                foreach my $incfilename (glob $incglob) {
+                    new($class, $incfilename, $self);
+                }
+            } else {
+                die "Syntax Error in config file $filename on line $line\n";
             }
         }
     }

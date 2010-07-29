@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+
+# PROVIDE: resmon
+# REQUIRE: DAEMON
+
+# Add the following lines to /etc/rc.conf to enable resmon:
+#
+# resmon_enable (bool):         Set it to "YES" to enable resmon
+# resmon_flags (string):        Extra flags to pass to resmon, for example:
+#                               resmon_flags="-c /path/to/resmon.conf"
+
+. /etc/rc.subr
+
+name="resmon"
+rcvar=`set_rcvar`
+command="/opt/resmon/resmon"
+command_interpreter="/usr/bin/perl"
+
+load_rc_config $name
+run_rc_command "$1"
