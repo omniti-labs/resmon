@@ -92,7 +92,7 @@ sub handler {
     # Build the list of non-global zones
     my $zonelist = run_command("$zoneadm list");
     my @zones = grep {!/^global$/} split(/\n/, $zonelist);
-    chomp $zones;
+    chomp @zones;
     my $zones = join(':', @zones);
 
     # Get stuff.  Start with the current list of mounts and test each zonepath
