@@ -92,6 +92,7 @@ sub handler {
     # Build the list of non-global zones
     my $zonelist = run_command("$zoneadm list");
     my @zones = grep {!/^global$/} split(/\n/, $zonelist);
+    chomp $zones;
     my $zones = join(':', @zones);
 
     # Get stuff.  Start with the current list of mounts and test each zonepath
@@ -113,14 +114,16 @@ sub handler {
 	    chomp $output;
 	    my @result = split(/:\s*/, $output);
 	    my $path = $result[1];
-	    my $dataset = $mounts->{$path};
+	    chomp $path;
+
+	    my $dataset = $path;
 	    if ($dataset) {
 	      my $creation = run_command("$zfs get -H -o value -p creation $dataset");
 	      chomp $creation;
 	      $status->{"${zone}_creation"}   = [$creation, "i"];
       }
 	    else {
-	      $dataset = "Not a mountpoint";
+	      $dataset = undef;
 	    }
 
 	    # Store the values
