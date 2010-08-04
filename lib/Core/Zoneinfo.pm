@@ -116,7 +116,7 @@ sub handler {
 	    my $path = $result[1];
 	    chomp $path;
 
-	    my $dataset = $path;
+	    my $dataset = $mounts->{$path};
 	    if ($dataset) {
 	      my $creation = run_command("$zfs get -H -o value -p creation $dataset");
 	      chomp $creation;
