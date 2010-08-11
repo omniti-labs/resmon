@@ -323,7 +323,7 @@ eval {
     # of some sort. If you're specifying a warning/critical threshold, then
     # you are too.
     die "Numeric threshold specified for a non-numeric metric"
-        if (($warning || $critical) && $type !~ /[0IlLn]/);
+        if (($warning || $critical) && $type !~ /[0IlLni]/);
 
     if ($regex) {
         if ($value =~ /$regex/) {
