@@ -16,7 +16,7 @@ sub handler {
   my $warning = $arg->{'warning'};
   my $critical = $arg->{'critical'};
   $warning = $critical if not $warning;
-  my $output = cache_command("/usr/bin/sensors $chip", 30);
+  my $output = cache_command("/usr/bin/sensors '$chip'", 30);
   print STDERR $output if $DEBUG;
   my @lines = split(/\n/, $output);
   my ($temp,$continues);
