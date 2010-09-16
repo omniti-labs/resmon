@@ -71,7 +71,7 @@ sub wildcard_handler {
     my $osname = $^O;
     my $metrics;
 
-    if ($osname eq 'openbsd') {
+    if ($osname =~ m/(free)|(open)bsd/) {
         foreach (split(/\n/, $output)) {
             if (/(\w+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/) {
                 $metrics->{$1}->{"evals"} += $2;

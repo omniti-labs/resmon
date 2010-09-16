@@ -68,7 +68,7 @@ sub wildcard_handler {
     my $osname = $^O;
     my $metrics;
 
-    if ($osname eq 'openbsd') {
+    if ($osname =~ m/(free)|(open)bsd/) {
         foreach (split(/queue\s+/, $output)) {
             next unless /\w+/;
             if (/(\S+)\s+.*\n\s+\[\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+)\s+dropped\s+pkts\:\s+(\d+)\s+bytes\:\s+(\d+).*/) {

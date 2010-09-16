@@ -113,7 +113,7 @@ sub handler {
         'synproxy'        => 'counters_synproxy'
     );
 
-    if ($osname eq 'openbsd') {
+    if ($osname =~ m/(free)|(open)bsd/) {
         foreach (split(/\n/, $output)) {
             if (/^\s+\w+.*/) {
                 if (/^\s+current\sentries\s+(\d+)\s+/) {
