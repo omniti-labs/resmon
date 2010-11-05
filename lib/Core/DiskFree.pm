@@ -105,8 +105,8 @@ sub handler {
     my ($line) = grep(/$fs\s*/, split(/\n/, $output));
     if($line =~ /(\d+)\s+(\d+)\s+(\d+)%/) {
         return {
-            "used_KB" => [$1, "i"],
-            "free_KB" => [$2, "i"],
+            "used_KB" => [$1, "L"],
+            "free_KB" => [$2, "L"],
             "used_percent" => [$3, "i"]
         };
     } else {
@@ -132,8 +132,8 @@ sub wildcard_handler {
             my ($fs, $used, $free, $percent) = ($1, $2, $3, $4);
             next if $fs =~ /$excludes/;
             $metrics->{$fs} = {
-                "used_KB" => [$used, "i"],
-                "free_KB" => [$free, "i"],
+                "used_KB" => [$used, "L"],
+                "free_KB" => [$free, "L"],
                 "used_percent" => [$percent, "i"]
             };
         }
