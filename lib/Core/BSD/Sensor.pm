@@ -68,8 +68,6 @@ sub handler {
 
     return {
         "check_name" => [$self->{check_name}, "s"],
-        "chip" => [$config->{chip}, "s"],
-        "sensor" => [$config->{sensor}, "s"],
         "value" => [$value, "n"]
     };
 };
