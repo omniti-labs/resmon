@@ -67,7 +67,6 @@ sub handler {
     my $value = $1;
 
     return {
-        "check_name" => [$self->{check_name}, "s"],
         "value" => [$value, "n"]
     };
 };
