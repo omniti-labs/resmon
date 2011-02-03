@@ -12,7 +12,7 @@ sub handler {
   return "BAD($size, too big)"
         if($maxsize && ($size > $maxsize));
   return "BAD($size, too small)"
-        if($minsize && ($size > $minsize));
+        if($minsize && ($size < $minsize));
   return "OK($size)";
 }
 1;
