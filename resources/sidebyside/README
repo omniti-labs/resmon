@@ -1,0 +1,7 @@
+The following contains a sample configuration and SMF manifest for running
+resmon2 side by side with resmon1. The differences are:
+
+ resmon.conf => resmon2.conf
+ port 81 => port 82
+ /var/run/resmon-status.txt => /var/run/resmon2-status.txt
+ /opt/resmon => /opt/resmon2
