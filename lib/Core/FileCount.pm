@@ -108,6 +108,7 @@ sub handler {
     opendir(my $dir, $dirname) || die "Unable to access directory $dirname\n";
     my $now = time;
     my $count = 0;
+    my @files;
     while (my $file = readdir($dir)) {
         # Make sure we're actually counting files if desired
         next if ($config->{real_files} && ! -f "$dirname/$file");
@@ -145,11 +146,13 @@ sub handler {
             sprintf("%04o", $fileinfo[2] & 07777) !~ /$config->{permissions}/);
         # We passed all filters, yay!
         $count++;
+        push @files,$file;
     }
     closedir($dir);
 
     return {
         "count" => [$count, "i"],
+        "files" => [join(',',@files), "s"],
     };
 };
 
