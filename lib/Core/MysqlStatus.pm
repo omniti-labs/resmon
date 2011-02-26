@@ -70,7 +70,7 @@ sub handler {
     my $pass = $config->{'pass'};
     my $dbh = DBI->connect("DBI:mysql::$target;port=$port", $user, $pass);
 
-    my $select_query = "SHOW GLOBAL STATUS";
+    my $select_query = "SHOW /*!50002 GLOBAL */ STATUS";
     my $sth = $dbh->prepare($select_query);
     $sth->execute();
 
