@@ -178,7 +178,7 @@ use utils qw($TIMEOUT %ERRORS &print_revision &support);
 
 delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
-my ($port, $host, $module, $check, $age, $warning, $critical, $regex,
+my ($port, $host, $module, $check, $age, $warning, $critical, $equals, $regex,
     $metric, $url) = (81,"","","",0, "", "", "", "");
 
 sub help {
@@ -192,8 +192,8 @@ sub help {
     print " -m | --metric       metric name to check\n";
     print " -w | --warning      warning threshold (numeric metrics only)\n";
     print " -c | --critical     critical threshold (numeric metrics only)\n";
-    print " -r | --regex        regex match against the metric (string";
-    print " metrics only)\n";
+    print " -e | --equals       metric must equal this value (numerical metrics only)\n";
+    print " -r | --regex        regex match against the metric (string print metrics only)\n";
     print " -u | --url          specify an alternate URL to fetch\n";
     exit $ERRORS{'UNKNOWN'};
 }
@@ -279,6 +279,7 @@ GetOptions (
     "m|metric=s"   => \$metric,
     "w|warning=s"  => \$warning,
     "c|critical=s" => \$critical,
+    "e|equals=i"   => \$equals,
     "r|regex=s"    => \$regex,
     "u|url=s"      => \$url);
 
@@ -286,8 +287,13 @@ unless ($host && $module && $check) {
     short_help();
 }
 
-if (($warning || $critical) && $regex) {
+if (($warning || $critical || $equals ) && $regex) {
     print "Cannot specify both numeric thresholds and a string based match\n";
+    exit $ERRORS{'UNKNOWN'};
+}
+
+if (($warning || $critical ) && $equals) {
+    print "Cannot specify thresholds and equals\n";
     exit $ERRORS{'UNKNOWN'};
 }
 
@@ -325,6 +331,16 @@ eval {
     die "Numeric threshold specified for a non-numeric metric"
         if (($warning || $critical) && $type !~ /[0IlLni]/);
 
+
+    if ($equals) {
+        if ($value eq $equals) {
+            $state = "OK";
+        } else {
+            $state = "CRITICAL";
+        }
+        print "$state: $value\n";
+    }
+ 
     if ($regex) {
         if ($value =~ /$regex/) {
             $state = "OK";
