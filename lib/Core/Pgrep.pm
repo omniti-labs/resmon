@@ -16,7 +16,7 @@ Core::Pgrep - Check for running processes using pgrep
 =head1 SYNOPSIS
 
  Core::Pgrep {
-     myproc : pattern => foo.sh -c foo, fullcmd => 1
+     myproc : pattern => foo.sh -c foo, full => 1
  }
 
  Core::Pgrep {
@@ -74,6 +74,8 @@ sub handler {
     my $full = $config->{full} ? "f" : "";
 
     my $args;
+    my $count;
+    my @count;
 
     if ( $^O eq "solaris" ) {
       my $zonename = `zonename`;
@@ -81,8 +83,19 @@ sub handler {
       $args .= "-z $zonename";
     }
 
-    my @count = split(/\n/, (run_command("$pgrep_path", "$args", "$config->{pattern}")) );
-    my $count = scalar(@count);
+    if ( $full ) {
+      $args .= "-f";
+    }
+
+    # run_command acts oddly if $args is empty. pgrep throws an error.
+    if ( $args ) {
+      @count = split(/\n/, (run_command("$pgrep_path", $args, $config->{pattern})) );
+    }
+    else {
+      @count = split(/\n/, (run_command("$pgrep_path", $config->{pattern})) );
+    }
+    $count = scalar(@count);
+
     die "Unable to run pgrep command\n" if (!defined($count));
     chomp $count;
 
