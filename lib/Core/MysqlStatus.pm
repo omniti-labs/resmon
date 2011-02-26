@@ -54,6 +54,13 @@ documentation at http://dev.mysql.com/doc/.
 
 =cut
 
+=head1 NOTES
+
+If you want to retrieve slave metrics, you will need to give the user you are
+connecting as REPLICATION CLIENT privileges.
+
+=cut
+
 sub handler {
     my $self = shift;
     my $config = $self->{'config'};
@@ -70,6 +77,15 @@ sub handler {
     my %metrics;
     while (my $result = $sth->fetchrow_hashref) {
         $metrics{$result->{'Variable_name'}} = $result->{'Value'};
+    }
+
+    my $slave_query = "SHOW SLAVE STATUS";
+    my $s_sth = $dbh->prepare($slave_query);
+    $s_sth->execute();
+    while (my $s_result = $s_sth->fetchrow_hashref) {
+      foreach my $field ( keys %{ $s_result } ) {
+        $metrics{$field} = $s_result->{$field};
+      }
     }
 
     return \%metrics;
