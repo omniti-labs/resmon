@@ -83,7 +83,7 @@ sub handler {
   $months{'Apr'} = 30;
   $months{'Jun'} = 30;
   $months{'Sep'} = 30;
-  $months{'nov'} = 30;
+  $months{'Nov'} = 30;
   
   if ( $months{$month} ) { $m_mod = $months{$month} }
 
