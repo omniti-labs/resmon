@@ -136,7 +136,7 @@ sub handler {
     $result->{"${type}_month_cost"}  = [ $month_cost, "n" ];
     $result->{"${type}_running"}     = [ $instances{type}{$t}{running}, "i" ];
 
-    $total_cost = $total_cost + $result->{"${type}_month_cost"};
+    $total_cost = $total_cost + $month_cost;
   }
 
   $result->{overview_total}    = [ $total_cost, "n" ];
