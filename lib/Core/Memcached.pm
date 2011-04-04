@@ -14,7 +14,8 @@ Core::Memcached - check MySQL global statistics
 =head1 SYNOPSIS
 
 Core::Memcached {
-   127.0.0.1: memstat_path => /path/to/memstat
+   one : memstat_path => /path/to/memstat, host => 127.0.0.1, port => 11211
+   two : memstat_path => /path/to/memstat, host => 127.0.0.1, port => 11212
 }
 
 =head1 DESCRIPTION
@@ -33,22 +34,32 @@ Core::Memcached {
 
 sub handler {
     my $self         = shift;
+    my $name         = $self->{'check_name'};
     my $config       = $self->{'config'};
+    my $host         = $config->{'host'};
+    my $port         = $config->{'port'};
+    my $memstat_path = $config->{'memstat_path'};
 
     my %results;
 
-    my $output = `/usr/local/bin/memstat --servers=127.0.0.1 | grep :`;
+    my $output = `$memstat_path --servers=$host:$port | grep :`;
     foreach (split(/\n/, $output)) {
         /(\S+):\s+(\w+)/;
-        $results{$1} = $2;
+        $results{"${name}_$1"} = $2;
     }
 
-    my $total = $results{get_misses} + $results{get_hits};
+    my $total = $results{ "${name}_get_misses" } + $results{ "${name}_get_hits" };
 
-    $results{hit_ratio}  = ( $results{get_hits} / $total ) * 100;
-    $results{miss_ratio} = 100 - $results{hit_ratio};
+    if ( $total eq 0 ) {
+      $results{ "${name}_hit_ratio"  } = 0;
+      $results{ "${name}_miss_ratio" } = 100;
+    }
+    else {
+      $results{ "${name}_hit_ratio"  } = ( $results{ "${name}_get_hits"} / $total ) * 100;
+      $results{ "${name}_miss_ratio" } = 100 - $results{ "${name}_hit_ratio" };
+    }
 
-    $results{fill_ratio} = ( $results{bytes} / $results{limit_maxbytes} ) * 100;
+    $results{ "${name}_fill_ratio" } = ( $results{ "${name}_bytes" } / $results{ "${name}_limit_maxbytes"} ) * 100;
 
     return \%results;
 };
