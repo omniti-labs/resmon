@@ -80,7 +80,7 @@ sub handler {
     if ( $^O eq "solaris" ) {
       my $zonename = `zonename`;
       chomp $zonename;
-      $args .= "-z $zonename";
+      $args .= "-z $zonename ";
     }
 
     if ( $full ) {
@@ -89,7 +89,8 @@ sub handler {
 
     # run_command acts oddly if $args is empty. pgrep throws an error.
     if ( $args ) {
-      @count = split(/\n/, (run_command("$pgrep_path", $args, $config->{pattern})) );
+      @count = split(/\n/, (run_command("$pgrep_path $args \'$config->{pattern}\'")) );
+
     }
     else {
       @count = split(/\n/, (run_command("$pgrep_path", $config->{pattern})) );
