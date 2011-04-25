@@ -325,13 +325,19 @@ eval {
     #use Data::Dumper;
     #print Dumper($ref->{ResmonResult});
 
+    my $idx;
+    for ($idx=0; $idx < $#{$ref->{ResmonResult}}; $idx++) {
+        last if ($ref->{ResmonResult}->[$idx]->{module} eq $module &&
+            $ref->{ResmonResult}->[$idx]->{service} eq $check);
+    }
+
     # If we have stale information, then go critical
-    my $last_update = time() - $ref->{ResmonResult}->[0]->{last_update}->[0];
+    my $last_update = time() - $ref->{ResmonResult}->[$idx]->{last_update}->[0];
     die "Stale metrics. Last updated $last_update seconds ago"
         if($age && $age < $last_update);
 
     # Get the metrics
-    my $metricval = $ref->{ResmonResult}->[0]->{metric}->{$metric};
+    my $metricval = $ref->{ResmonResult}->[$idx]->{metric}->{$metric};
 
     # Detect absence of a metric
     if (!defined($metricval)) {
