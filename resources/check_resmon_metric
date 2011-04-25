@@ -319,10 +319,11 @@ eval {
     my $ref;
     # Make the HTTP request
     my $res = $ua->request($t);
-    die "CRITICAL: could not fetch\n" unless($res && $res->is_success);
+    die "could not fetch http://$host:$port$url - " . $res->status_line ."\n"
+        unless($res && $res->is_success);
     # Parse the xml
     eval { $ref = $xs->XMLin($res->content, ForceArray => 1); };
-    die "CRITICAL: error parsing XML\n" if($@);
+    die "error parsing XML\n" if($@);
 
     # Debugging
     #use Data::Dumper;
@@ -369,7 +370,7 @@ eval {
         } else {
             $state = "CRITICAL";
         }
-        print "$state: $value\n";
+        print "$state: $metric = $value\n";
     }
  
     if (defined $regex) {
@@ -378,7 +379,7 @@ eval {
         } else {
             $state = "CRITICAL";
         }
-        print "$state: $value\n";
+        print "$state: $metric - $value\n";
     }
 
     if (defined $warning || defined $critical) {
