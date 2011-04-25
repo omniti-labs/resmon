@@ -82,6 +82,14 @@ similar fashion to resmon, you can specify an alternate url here. You only
 need to specify the part after hostname/port. For example, if you need to hit
 http://host:port/resmon then pass -u /resmon.
 
+=item -a
+
+Specify that an absence should be treated as an OK value. By default, if a
+metric is absent, it is treated as CRITICAL. A metric is considered absent if
+the check information can be fetched, but the metric itself isn't listed in
+the XML output. If the check information cannot be fetched, then it is still a
+critical error.
+
 =back
 
 =head1 THRESHOLDS
@@ -179,7 +187,7 @@ use utils qw($TIMEOUT %ERRORS &print_revision &support);
 delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
 my ($port, $host, $module, $check, $age, $warning, $critical, $equals, $regex,
-    $metric, $url) = (81,"","","",0, "", "", "", "");
+    $metric, $url, $allow_absent) = (81,"","","",0, "", "", "", "", 0);
 
 sub help {
     print "Usage: $0 [options]\n";
@@ -195,6 +203,7 @@ sub help {
     print " -e | --equals       metric must equal this value (numerical metrics only)\n";
     print " -r | --regex        regex match against the metric (string print metrics only)\n";
     print " -u | --url          specify an alternate URL to fetch\n";
+    print " -a | --allowabsent  Treat absences as OK (default: critical)\n";
     exit $ERRORS{'UNKNOWN'};
 }
 
@@ -281,7 +290,8 @@ GetOptions (
     "c|critical=s" => \$critical,
     "e|equals=i"   => \$equals,
     "r|regex=s"    => \$regex,
-    "u|url=s"      => \$url);
+    "u|url=s"      => \$url,
+    "a|allowabsent" => \$allow_absent);
 
 unless ($host && $module && $check) {
     short_help();
@@ -322,6 +332,18 @@ eval {
 
     # Get the metrics
     my $metricval = $ref->{ResmonResult}->[0]->{metric}->{$metric};
+
+    # Detect absence of a metric
+    if (!defined($metricval)) {
+        if ($allow_absent) {
+            $state = "OK";
+        } else {
+            $state = "CRITICAL";
+        }
+        print "$state: Metric $metric is absent\n";
+        exit $ERRORS{$state};
+    }
+
     my $value = $metricval->{content};
     my $type = $metricval->{type} || "0";
 
