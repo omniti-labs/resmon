@@ -187,7 +187,8 @@ use utils qw($TIMEOUT %ERRORS &print_revision &support);
 delete @ENV{'PATH', 'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
 
 my ($port, $host, $module, $check, $age, $warning, $critical, $equals, $regex,
-    $metric, $url, $allow_absent) = (81,"","","",0, "", "", "", "", 0);
+    $metric, $url, $allow_absent) = (81, undef, undef, undef, 0, undef, undef,
+    undef, undef, 0);
 
 sub help {
     print "Usage: $0 [options]\n";
@@ -216,14 +217,14 @@ sub short_help {
 sub check_threshold {
     my ($value, $warning, $critical) = @_;
     my ($state, $message, $warnmessage, $critmessage) = (0,"","","");
-    if ($critical) {
+    if (defined $critical) {
         ($state, $critmessage) = check_single_threshold($value, $critical);
         if (!$state) {
             return ("CRITICAL", $critmessage);
         }
         $message = $critmessage;
     }
-    if ($warning) {
+    if (defined $warning) {
         ($state, $warnmessage) = check_single_threshold($value, $warning);
         if (!$state) {
             return ("WARNING", $warnmessage);
@@ -241,8 +242,9 @@ sub check_single_threshold {
     my ($value, $threshold) = @_;
     my ($inclusive, $start, $end) = (
         $threshold =~ /(\@?)(?:(-?[0-9.]+|~):)?(-?[0-9.]+|~)?/);
-    $start ||= 0;
-    $end ||= "";
+    $start = "0" unless defined $start;
+    $end = "" unless defined $end;
+
     my $message;
     my $goodmessage;
     my $badmessage;
@@ -293,16 +295,17 @@ GetOptions (
     "u|url=s"      => \$url,
     "a|allowabsent" => \$allow_absent);
 
-unless ($host && $module && $check) {
+unless (defined $host && defined $module && defined $check) {
     short_help();
 }
 
-if (($warning || $critical || $equals ) && $regex) {
+if ((defined $warning || defined $critical || defined $equals ) &&
+    defined $regex) {
     print "Cannot specify both numeric thresholds and a string based match\n";
     exit $ERRORS{'UNKNOWN'};
 }
 
-if (($warning || $critical ) && $equals) {
+if ((defined $warning || defined $critical ) && defined $equals) {
     print "Cannot specify thresholds and equals\n";
     exit $ERRORS{'UNKNOWN'};
 }
@@ -357,10 +360,10 @@ eval {
     # of some sort. If you're specifying a warning/critical threshold, then
     # you are too.
     die "Numeric threshold specified for a non-numeric metric"
-        if (($warning || $critical) && $type !~ /[0IlLni]/);
+        if ((defined $warning || defined $critical) && $type !~ /[0IlLni]/);
 
 
-    if ($equals) {
+    if (defined $equals) {
         if ($value eq $equals) {
             $state = "OK";
         } else {
@@ -369,7 +372,7 @@ eval {
         print "$state: $value\n";
     }
  
-    if ($regex) {
+    if (defined $regex) {
         if ($value =~ /$regex/) {
             $state = "OK";
         } else {
@@ -378,7 +381,7 @@ eval {
         print "$state: $value\n";
     }
 
-    if ($warning || $critical) {
+    if (defined $warning || defined $critical) {
         my $message;
         ($state, $message) = check_threshold($value, $warning, $critical);
         print "$state: $metric - $message\n";
