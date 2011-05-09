@@ -70,9 +70,11 @@ sub xml_kv_dump {
     my $info = shift;
     my $indent = shift || 0;
     my $rv = '';
-    while(my ($key, $value) = each %$info) {
+    foreach my $key (sort keys %$info) {
+        my $value = $info->{$key}; 
         if(ref $value eq 'HASH') {
-            while (my ($k, $v) = each %$value) {
+            foreach my $k (sort keys %$value) {
+                my $v = $value->{$k}; 
                 $rv .= " " x $indent;
                 $rv .= "<$key name=\"$k\"";
                 if (ref($v) eq 'ARRAY') {
@@ -118,8 +120,10 @@ sub dump_generic {
     my $self = shift;
     my $dumper = shift;
     my $rv = '';
-    while(my ($module, $services) = each %{$self->{store}}) {
-        while(my ($service, $info) = each %$services) {
+    foreach my $module (sort keys %{$self->{store}}) {
+        my $services = $self->{store}->{$module};
+        foreach my $service (sort keys %$services) {
+            my $info = $services->{$service};
             $rv .= $dumper->($module,$service,$info);
         }
     }
@@ -133,7 +137,8 @@ sub dump_generic_module {
     my $module = shift;
     my $rv = '';
     my $services = $self->{store}->{$module};
-    while(my ($service, $info) = each %$services) {
+    foreach my $service (sort keys %$services) {
+        my $info = $services->{$service};
         $rv .= $dumper->($module,$service,$info);
     }
     return $rv;
