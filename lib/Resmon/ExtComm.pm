@@ -10,14 +10,16 @@ my %commhist;
 my %commcache;
 my %children;
 
-sub cache_command($$) {
-    my ($command, $expiry) = @_;
+sub cache_command {
+    my $expiry = pop;
+    my @command = @_;
+    my $command = join(" ", @command);
 
     my $now = time;
     if($commhist{$command}>$now) {
         return $commcache{$command};
     }
-    $commcache{$command} = run_command($command);
+    $commcache{$command} = run_command(@command);
     $commhist{$command} = $now + $expiry;
     return $commcache{$command};
 }
