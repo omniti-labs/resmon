@@ -509,7 +509,8 @@ sub write {
     # Writes the metrics output for a single check to stdout and/or a file
     my ($self, $module_name, $check_name, $metrics, $debug) = @_;
     my $metrics_output = "$module_name`$check_name\n";
-    while (my ($k, $v) = each (%$metrics)) {
+    foreach my $k (sort keys %$metrics) {
+        my $v = $metrics->{$k};
         if (ref($v) eq "ARRAY") {
             $v = $v->[0];
         }
