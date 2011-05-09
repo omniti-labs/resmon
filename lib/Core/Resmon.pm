@@ -16,7 +16,8 @@ sub new {
     if (defined($self->{config}->{svnversion_path})) {
         $svnversion = $self->{config}->{svnversion_path};
     }
-    $self->{svn_revision} = `$svnversion`;
+    #$self->{svn_revision} = `$svnversion`;
+    $self->{svn_revision} = "";
     if ($self->{svn_revision} eq "") {
         $self->{svn_revision} = "unknown";
     }
