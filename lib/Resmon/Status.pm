@@ -98,12 +98,51 @@ sub xml_kv_dump {
     return $rv;
 }
 
+sub plain_kv_dump {
+    my $info = shift;
+    my $indent = shift || 0;
+    my $rv = '';
+    foreach my $key (sort keys %$info) {
+        my $value = $info->{$key};
+        if(ref $value eq 'HASH') {
+            foreach my $k (sort keys %$value) {
+                my $v = $value->{$k};
+                #$rv .= " " x $indent;
+                $rv .= "$k";
+                if (ref($v) eq 'ARRAY') {
+                    # A value/type pair
+                    my $type = $v->[1];
+                    if ($type !~ /^[0iIlLns]$/) {
+                        $type = "0";
+                    }
+                    #$rv .= " type=\"$type\"";
+                    $v = $v->[0];
+                }
+                $rv .= "=$v\n";
+            }
+        } else {
+            #$rv .= " " x $indent;
+            $rv .= "resmon_$key=$value\n";
+        }
+    }
+    $rv .= "\n";
+    return $rv;
+}
+
 sub xml_info {
     my ($module, $service, $info) = @_;
     my $rv = '';
     $rv .= "  <ResmonResult module=\"$module\" service=\"$service\">\n";
     $rv .= xml_kv_dump($info, 4);
     $rv .= "  </ResmonResult>\n";
+    return $rv;
+}
+
+sub plain_info {
+    my ($module, $service, $info) = @_;
+    my $rv = '';
+    $rv .= "[$module`$service]\n";
+    $rv .= plain_kv_dump($info, 4);
     return $rv;
 }
 
@@ -153,6 +192,11 @@ EOF
     ; 
     $response .= $self->dump_generic(\&xml_info);
     $response .= "</ResmonResults>\n";
+    return $response;
+}
+sub dump_plain {
+    my $self = shift;
+    my $response = $self->dump_generic(\&plain_info);
     return $response;
 }
 sub get_xsl() {
@@ -304,6 +348,11 @@ sub service {
         $client->print(http_header(200, length($response), 'text/xml', $snip));
         $client->print($response . "\r\n");
         return;
+    } elsif($req eq '/?plain') {
+        my $response .= $self->dump_plain();
+        $client->print(http_header(200, length($response), 'text/plain', $snip));
+        $client->print($response . "\r\n");
+        return;
     } elsif($req eq '/resmon.xsl') {
         my $response = $self->get_xsl();
         $client->print(http_header(200, length($response), 'text/xml', $snip));
@@ -314,6 +363,15 @@ sub service {
         $client->print(http_header(200, length($response), 'text/css', $snip));
         $client->print($response . "\r\n");
         return;
+    } elsif($req =~ /^\/([^\/]+)\/(.+)\?plain$/) {
+        if(exists($self->{store}->{$1}) &&
+            exists($self->{store}->{$1}->{$2})) {
+            my $info = $self->{store}->{$1}->{$2};
+            my $response = plain_info($1,$2,$info);
+            $client->print(http_header(200, length($response), 'text/plain', $snip));
+            $client->print( $response . "\r\n");
+            return;
+        }
     } elsif($req =~ /^\/([^\/]+)\/(.+)$/) {
         if(exists($self->{store}->{$1}) &&
             exists($self->{store}->{$1}->{$2})) {
@@ -324,6 +382,13 @@ sub service {
             xml_info($1,$2,$info).
             "</ResmonResults>\n";
             $client->print(http_header(200, length($response), 'text/xml', $snip));
+            $client->print( $response . "\r\n");
+            return;
+        }
+    } elsif($req =~ /^\/([^\/]+)\?plain$/) {
+        if(exists($self->{store}->{$1})) {
+            my $response = $self->dump_generic_module(\&plain_info,$1);
+            $client->print(http_header(200, length($response), 'text/plain', $snip));
             $client->print( $response . "\r\n");
             return;
         }
