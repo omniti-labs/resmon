@@ -463,7 +463,9 @@ sub serve_http_on {
         eval {
             $SIG{'HUP'} = 'IGNORE';
             $SIG{'PIPE'} = 'IGNORE';
-            while(my $client = $handle->accept) {
+            while(1) {
+                my $client = $handle->accept;
+                next unless $client;
                 my $req;
                 my $proto;
                 my $close_connection;
