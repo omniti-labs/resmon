@@ -40,6 +40,10 @@ The check name is descriptive only in this check. It is not used for anything.
 
 Provide an alternate path to the svcs command. Optional.
 
+=item pattern
+
+A perl regular expression of the services to report on.  Optional.  Defaults to all services.
+
 =back
 
 =head1 METRICS
@@ -51,11 +55,11 @@ Provide an alternate path to the svcs command. Optional.
 A count of how many services are in disabled mode. This should normally be
 zero.
 
-=item services
+=item <service name>
 
-A list of the services in disabled mode. If no services are in disabled 
-mode, then this will be blank. The service names will be separated by
-whitespace.
+For each service that matches the pattern, the a result will be
+added with the service name as a metric.  The value will be 1 for
+disabled, and 0 otherwise.
 
 =back
 
