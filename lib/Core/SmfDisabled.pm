@@ -66,16 +66,27 @@ sub handler {
     my $config = $self->{config}; # All configuration is in here
 
     my $svcs_path = $config->{svcs_path} || 'svcs';
+    my $pattern = $config->{pattern} || '.*';
+    $pattern = qr/$pattern/;
 
-    my $output = run_command("$svcs_path");
-    my @disabled_services = map((split(/\s+/, $_))[2],
-        grep(/^disabled/, split(/\n/, $output)));
-
-
-    return {
-        "count" => [scalar(@disabled_services), "i"],
-        "services" => [join(" ", @disabled_services), "s"]
+    my $output = {
+        count => 0,
     };
-};
+    my $svcs_output = run_command("$svcs_path -a");
+    my @lines = grep { $_ ne '' } split /\n/, $svcs_output;
+    for my $line (@lines) {
+        my ($state, $start, $name) = split /\s+/, $line, 3;
+        if ($name =~ $pattern) {
+            if ($state eq 'disabled') {
+                $output->{count}++;
+                $output->{$name} = 1;
+            }
+            else {
+                $output->{$name} = 0;
+            }
+        }
+    }
+    return $output;
+}
 
 1;
