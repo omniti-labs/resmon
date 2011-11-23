@@ -15,13 +15,14 @@ Core::SmfDisabled - Monitor services in disabled mode
 
 =head1 SYNOPSIS
 
- Core::SmfDisabled {
-     services: noop
- }
+    Core::SmfDisabled {
+        sshd_disabled: pattern => ssh
+        apache_disabled: pattern => httpd
+    }
 
- Core::SmfDisabled {
-     services: svcs_path => /bin/svcs
- }
+    Core::SmfDisabled {
+        sshd_disabled: svcs_path => /bin/svcs, pattern => ssh
+    }
 
 =head1 DESCRIPTION
 
