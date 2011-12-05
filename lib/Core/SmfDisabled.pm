@@ -79,6 +79,12 @@ sub handler {
     };
     my $svcs_output = run_command("$svcs_path -a");
     my @lines = grep { $_ ne '' } split /\n/, $svcs_output;
+
+    # svcs/smf is broken
+    if ($? && ! @lines) {
+        return {};
+    }
+
     for my $line (@lines) {
         my ($state, $start, $name) = split /\s+/, $line, 3;
         if ($name =~ $pattern) {

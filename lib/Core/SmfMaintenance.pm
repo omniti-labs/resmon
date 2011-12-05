@@ -71,6 +71,10 @@ sub handler {
     my @maintenance_services = map((split(/\s+/, $_))[2],
         grep(/^maintenance/, split(/\n/, $output)));
 
+    # svcs/smf is broken
+    if ($? && ! @maintenance_services) {
+        return {};
+    }
 
     return {
         "count" => [scalar(@maintenance_services), "i"],
