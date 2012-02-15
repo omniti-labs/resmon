@@ -134,6 +134,9 @@ sub handler {
             $metrics{$1} = [$2, 'L'];
         }
         close(MEMINFO);
+        $metrics{MemFreeBufCache} = [
+            ($metrics{MemFree}[0] + $metrics{Buffers}[0] +
+                $metrics{Cached}[0]), "L"];
         return \%metrics;
     } elsif ($osname eq 'freebsd') {
         my %metrics;
