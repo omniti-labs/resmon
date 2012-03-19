@@ -89,7 +89,7 @@ sub new {
         $self->{default_dfregex} = '\d+\s+(\d+)\s+(\d+)\s+(\d+)%';
     } elsif ($^O eq 'openbsd') {
         $self->{default_dfcmd} = 'df -i';
-        $self->{default_dfregex} = \
+        $self->{default_dfregex} =
             '\d+\s+\d+\s+-?\d+\s+\d+%\s+(\d+)\s+(\d+)\s+(\d+)%';
     } else {
         $self->{default_dfcmd} = 'df -iP';
