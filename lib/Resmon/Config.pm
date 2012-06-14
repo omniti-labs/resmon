@@ -13,11 +13,12 @@ sub split_ip_list {
     my (@result,$quad,$bits,$matchbits,$int,$mask);
     for (split (/\s*[,\s]\s*/, $string)) {
        ($quad, $bits) = m!^(\d+\.\d+\.\d+\.\d+)(?:/(\d+))?!g;
-       $bits = 32 if ($bits eq '');
+       $bits = 32 unless (defined($bits) && $bits ne '');
        $matchbits = 32 - $bits;
        $int = unpack("N", pack("C4", split(/\./,$quad)));
        $mask = $int >> $matchbits;
        push @result => {mask => $mask, bits => $matchbits, allow => $allow};
+print STDERR "mask=$mask,bits=$matchbits,allow=$allow\n";
     }
     return \@result;
 }
