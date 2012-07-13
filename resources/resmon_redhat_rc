@@ -1,22 +1,22 @@
 #!/bin/bash
 #
-# resmon2       Starts resmon2.
+# resmon       Starts resmon.
 #
 #
 # chkconfig: 2345 99 01
 # description: resmon is a systems monitoring facility to aid nagios \
 # checks.  it should always be running when the system is in operation.
 ### BEGIN INIT INFO
-# Provides: $resmon2
+# Provides: $resmon
 ### END INIT INFO
 
 # Source function library.
 . /etc/init.d/functions
 
-RESMON_DIR=/opt/resmon2
+RESMON_DIR=/opt/resmon
 RESMON_CONF=$RESMON_DIR/resmon.conf
 RESMON_BIN=$RESMON_DIR/resmon
-RESMON_LOCK=/var/lock/subsys/resmon2
+RESMON_LOCK=/var/lock/subsys/resmon
 
 [ -f $RESMON_BIN ] || exit 0
 [ -f $RESMON_CONF ] || exit 0
@@ -26,7 +26,7 @@ RETVAL=0
 umask 077
 
 start() {
-        echo -n $"Starting resmon2: "
+        echo -n $"Starting resmon: "
         daemon $RESMON_BIN
         RETVAL=$?
         echo
@@ -34,7 +34,7 @@ start() {
         return $RETVAL
 }
 stop() {
-        echo -n $"Shutting down resmon2: "
+        echo -n $"Shutting down resmon: "
         killproc $RESMON_BIN
         echo
         RETVAL=$?
@@ -42,14 +42,14 @@ stop() {
         return $RETVAL
 }
 rhstatus() {
-        status resmon2
+        status resmon
 }
 restart() {
         stop
         start
 }
 reload() {
-        echo -n $"Reloading resmon2: "
+        echo -n $"Reloading resmon: "
         killproc $RESMON_BIN -HUP
         echo
         return $?
