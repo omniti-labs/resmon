@@ -374,6 +374,9 @@ eval {
     }
  
     if (defined $regex) {
+        if (!defined($value)) {
+          $value = '';
+        }
         if ($value =~ /$regex/) {
             $state = "OK";
         } else {

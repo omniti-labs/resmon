@@ -441,6 +441,8 @@ sub serve_http_on {
     my $port = shift;
     $self->{authuser} = shift;
     $self->{authpass} = shift;
+    my $hostsallow = shift;
+
     if(!defined($ip) || $ip eq '' || $ip eq '*') {
         $ip = INADDR_ANY;
     } else {
@@ -469,6 +471,25 @@ sub serve_http_on {
             while(1) {
                 my $client = $handle->accept;
                 next unless $client;
+                my $hersockaddr    = getpeername($client);
+                my ($port, $iaddr) = sockaddr_in($hersockaddr);
+                my $denied;
+                 for my $el (@{$hostsallow}) {
+                  my $tmp = unpack("N",$iaddr);
+                  $tmp = $tmp >> $el->{bits} if $el->{bits};
+                  if ($tmp == $el->{mask}) {
+                    $denied = !$el->{allow};
+                    last;
+                  }
+                }
+                if ($denied) {
+                  my $response = "<html><head><title>IP denied</title></head>" .
+                  "<body><h1>IP denied</h1></body></html>";
+                  $client->print(http_header(401, length($response), 'text/html', $denied));
+                  $client->print($response . "\r\n");
+                  $client->close();
+                  next
+                };
                 my $req;
                 my $proto;
                 my $close_connection;

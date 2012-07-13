@@ -5,6 +5,23 @@ use warnings;
 
 use Sys::Hostname;
 
+
+sub split_ip_list {
+# this code is taken from  Marcel Gruenauer's <marcel@cpan.org> CPAN module Net::IP::Match
+    my $string = shift; 
+    my $allow = shift;
+    my (@result,$quad,$bits,$matchbits,$int,$mask);
+    for (split (/\s*[,\s]\s*/, $string)) {
+       ($quad, $bits) = m!^(\d+\.\d+\.\d+\.\d+)(?:/(\d+))?!g;
+       $bits = 32 unless (defined($bits) && $bits ne '');
+       $matchbits = 32 - $bits;
+       $int = unpack("N", pack("C4", split(/\./,$quad)));
+       $mask = $int >> $matchbits;
+       push @result => {mask => $mask, bits => $matchbits, allow => $allow};
+print STDERR "mask=$mask,bits=$matchbits,allow=$allow\n";
+    }
+    return \@result;
+}
 sub new {
     my $class = shift;
     my $filename = shift;
@@ -129,6 +146,14 @@ sub new {
             }
             elsif(/\s*AUTHPASS\s+(\S+)\s*;\s*/) {
                 $self->{authpass} = $1;
+                next;
+            }
+            elsif(/\s*HOSTS\s+ALLOW\s+([^;]+)\s*;\s*/) {
+                push (@{$self->{hostsallow}}, @{split_ip_list($1,1)});
+                next;
+            }
+            elsif(/\s*HOSTS\s+DENY\s+([^;]+)\s*;\s*/) {
+                push (@{$self->{hostsallow}}, @{split_ip_list($1,0)});
                 next;
             } elsif(/\s*INCLUDE\s+(\S+)\s*;\s*/) {
                 my $incglob = $1;
