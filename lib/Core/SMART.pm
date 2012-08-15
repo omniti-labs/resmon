@@ -16,7 +16,7 @@ Core::SMART - pulls SMART values from disk drives
 =head1 SYNOPSIS
 
  Core::SMART {
-     sda : smartctl_cmd => /usr/sbin/smartctl , smartctl_args => -d sat
+     sda : smartctl_cmd => /usr/sbin/smartctl , smartctl_args => -d sat\,12
  }
 
 =head1 DESCRIPTION
@@ -46,14 +46,17 @@ Optional list of additional arguments that will be passed to smartctl.
 The default arguments are "-i -A".  Any arguments specified here will be 
 added to this list.
 
+If the argument contains a comma, it must be escaped with a backslash.
+
 =back
 
 =head1 METRICS
 
-Each of the following metric names will be prefixed with the disk name.
+The SMART attribute data is highly vendor-specific.  Each attribute will produce
+two metrics, one with the normalized value and one with the raw value.
 
-The SMART attribute data is highly vendor-specific.  Post-processing may be
-desirable in specific cases, such as when the value as hex has special meaning.
+Post-processing may be desirable in specific cases, such as when the value as
+hex has special meaning.
 
 =over
 
@@ -71,8 +74,7 @@ Device firmware version as reported in the information section.
 
 =item (attribute)
 
-Each attribute reported in the data section will be returned by name.  The value
-will be the normalized value and is expected to be an integer.
+The normalized value of the attribute, expected to be an integer.
 
 =item (attribute)_raw
 
@@ -81,18 +83,6 @@ The raw value of the attribute, expected to be an integer.
 =back
 
 =cut
-
-sub new {
-    # This is only needed if you have initialization code. Most of the time,
-    # you can skip the new method and just implement a handler method.
-    my ($class, $check_name, $config) = @_;
-    my $self = $class->SUPER::new($check_name, $config);
-
-    # Add initialization code here
-
-    bless($self, $class);
-    return $self;
-}
 
 sub handler {
     my $self = shift;
@@ -109,18 +99,18 @@ sub handler {
 
     foreach my $line (split(/\n/, $output)) {
         if ($line =~ /^Device Model:\s+(.+)$/) {
-            $smartdata->{"$self->{check_name}_model"} = [$1, "s"];
+            $smartdata->{"model"} = [$1, "s"];
         }
         elsif ($line =~ /^Serial Number:\s+(.+)$/) {
-            $smartdata->{"$self->{check_name}_serial"} = [$1, "s"];
+            $smartdata->{"serial"} = [$1, "s"];
         }
         elsif ($line =~ /^Firmware Version:\s+(.+)$/) {
-            $smartdata->{"$self->{check_name}_fw"} = [$1, "s"];
+            $smartdata->{"fw"} = [$1, "s"];
         }
 	# Capture attribute_name, value, raw_value (columns 2,4,10)
         elsif ($line =~ /^\s*\d+\s(\S+)\s+\S+\s+(\S+)\s+\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+(\S+)/) {
-            $smartdata->{"$self->{check_name}_$1"} = [$2, "i"];
-            $smartdata->{"$self->{check_name}_$1_raw"} = [$3, "i"];
+            $smartdata->{"$1"} = [$2, "i"];
+            $smartdata->{"$1_raw"} = [$3, "i"];
         }
     }
 

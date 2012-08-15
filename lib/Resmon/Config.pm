@@ -62,7 +62,8 @@ sub new {
                 next if $current eq "BAD_MODULE";
                 my $kvs = {};
                 my $check_name = $1;
-                my @params = split(/,/, $2);
+                my @params = split(/(?<!\\),/, $2);
+                grep { s/\\(.)/$1/ } @params;
                 grep { $kvs->{$1} = $2 if /^\s*(\S+)\s*=>\s*(\S(?:.*\S)?)\s*$/ }
                     @params;
                 my $object;
