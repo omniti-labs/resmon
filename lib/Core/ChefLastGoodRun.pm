@@ -15,7 +15,7 @@ Core::ChefLastGoodRun
 =head1 SYNOPSIS
 
  Core::ChefLastGoodRun {
-    local : report_path => /var/chef/reports/last_good_run.json
+    chef : report_path => /var/chef/reports/last-good-run.json
  }
 
 =head1 DESCRIPTION
@@ -63,7 +63,7 @@ my $MODS_LOADED;
 sub handler {
     my $self = shift;
     my $config = $self->{'config'};
-    my $report_path = $config->{'report_path'} || '/var/chef/reports/last_good_run.json';
+    my $report_path = $config->{'report_path'} || '/var/chef/reports/last-good-run.json';
 
     unless (-e $report_path) { return {} }
 
