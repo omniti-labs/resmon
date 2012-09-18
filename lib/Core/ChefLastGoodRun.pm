@@ -81,7 +81,7 @@ sub handler {
         }
     }
 
-    my $report = File::Slurp::readfile($report_path);
+    my $report = File::Slurp::read_file($report_path);
     $report = decode_json($report);
 
     $metrics{elapsed} = [ $report->{elapsed_time}, 'F' ];
