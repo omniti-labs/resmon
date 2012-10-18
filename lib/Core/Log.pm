@@ -16,7 +16,7 @@ Core::Log - Monitor a log file for errors matching a certain pattern
 =head1 SYNOPSIS
 
  Core::Log {
-     /var/log/foo: match => ^ERROR:
+     foo: filename => /var/log/foo, match => ^ERROR:
  }
 
 =head1 DESCRIPTION
@@ -34,11 +34,15 @@ can be used to clear an alert for the error count being greater than 0.
 
 =item check_name
 
-The name of the file to monitor
+The check name for this module is descriptive only.
+
+=item filename
+
+The name of the file to monitor.
 
 =item match
 
-Regular expression for matching error lines
+Regular expression for matching error lines.
 
 =back
 
@@ -60,8 +64,8 @@ A string showing the errors
 
 sub handler {
     my $self = shift;
-    my $config = $self->{config}; # All configuration is in here
-    my $file = $self->{check_name}; # The check name is in here
+    my $config = $self->{config};
+    my $file = $config->{filename};
 
     my @statinfo = stat($file);
 
