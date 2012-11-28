@@ -3,13 +3,14 @@ PORT 81;
 STATUSFILE /var/run/resmon-status.txt;
 TIMEOUT 10;
 
+# HOSTS {ALLOW/DENY} lists are the coma or blank separated lists of a dotted
+# decimal IPv4 addresses of the form a.b.c.d. to match incoming machine’s IP
+# address exactly, or an 'ipaddr/n' where ipaddr is the IP address and n is
+# the number of one bits in the netmask.  the first match gives the result, if
+# nothing matches IP is allowed.
 HOSTS ALLOW 10.80.116.112, 127.0.0.1;
-# HOSTS {ALLOW/DENY} lists are the coma or blank separated lists of
-# a dotted decimal IPv4 addresses of the form a.b.c.d. to match incoming machine’s IP address exactly,
-# or an 'ipaddr/n' where ipaddr is the IP address and n is the number of one bits in the netmask.
-# the first match gives the result, if nothing matches IP is allowed.
-HOSTS DENY 10.80.117.128/25
-HOSTS ALLOW 10.80.116.0/23
+HOSTS DENY 10.80.117.128/25;
+HOSTS ALLOW 10.80.116.0/23;
 HOSTS DENY 0.0.0.0/0;
 
 # Resmon health check. Shows the hostname, svn revision and
