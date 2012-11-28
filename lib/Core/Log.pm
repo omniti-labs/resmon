@@ -44,6 +44,11 @@ The name of the file to monitor.
 
 Regular expression for matching error lines.
 
+=item maxerrs
+
+Maximum number of error lines to include in the error string output. Defaults
+to 5.
+
 =back
 
 =head1 METRICS
@@ -67,6 +72,8 @@ sub handler {
     my $config = $self->{config};
     my $file = $config->{filename};
 
+    $config->{maxerrs} = 5 unless exists($config->{maxerrs});
+
     my @statinfo = stat($file);
 
     if (!exists($self->{file_dev}) ||
@@ -89,8 +96,10 @@ sub handler {
         while(<$log>) {
             chomp;
             if (/$config->{match}/) {
-                $self->{errstring} .= " " if (length($self->{errstring}));
-                $self->{errstring} .= $_;
+                if ($self->{errs} < $config->{maxerrs}) {
+                    $self->{errstring} .= " " if (length($self->{errstring}));
+                    $self->{errstring} .= $_;
+                }
                 $self->{errs}++;
             }
         }
