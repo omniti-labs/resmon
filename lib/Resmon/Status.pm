@@ -42,9 +42,11 @@ sub get_shared_state {
             $blob = <$fh>;
         }
         flock($fh, LOCK_UN); # Release the lock
-        eval $blob;
-        die $@ if ($@);
-        $self->{store} = $VAR1;
+        if (defined $blob) {
+            eval $blob;
+            die $@ if ($@);
+            $self->{store} = $VAR1;
+        }
     } else {
         die "Unable to read shared state";
     };
