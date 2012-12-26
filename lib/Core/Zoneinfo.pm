@@ -101,34 +101,34 @@ sub handler {
     my $output = run_command("/sbin/mount");
 
     foreach my $line (split(/\n/, $output)) {
-	    my @parts = split(/\s+/, $line);
-	    next unless $parts[2] =~ /\//;
-	    $mounts->{$parts[0]} = $parts[2];
+            my @parts = split(/\s+/, $line);
+            next unless $parts[2] =~ /\//;
+            $mounts->{$parts[0]} = $parts[2];
     };
 
     my $status = {};
     my $zoneroots = "";
 
     foreach my $zone (@zones) {
-	    my $output = run_command("$zonecfg -z $zone info zonepath");
-	    chomp $output;
-	    my @result = split(/:\s*/, $output);
-	    my $path = $result[1];
-	    chomp $path;
+            my $output = run_command("$zonecfg -z $zone info zonepath");
+            chomp $output;
+            my @result = split(/:\s*/, $output);
+            my $path = $result[1];
+            chomp $path;
 
-	    my $dataset = $mounts->{$path};
-	    if ($dataset) {
-	      my $creation = run_command("$zfs get -H -o value -p creation $dataset");
-	      chomp $creation;
-	      $status->{"${zone}_creation"}   = [$creation, "i"];
+            my $dataset = $mounts->{$path};
+            if ($dataset) {
+              my $creation = run_command("$zfs get -H -o value -p creation $dataset");
+              chomp $creation;
+              $status->{"${zone}_creation"}   = [$creation, "i"];
       }
-	    else {
-	      $dataset = undef;
-	    }
+            else {
+              $dataset = undef;
+            }
 
-	    # Store the values
-	    $status->{"${zone}_path"}       = [$path, "s"];
-	    $status->{"${zone}_dataset"}    = [$dataset, "s"];
+            # Store the values
+            $status->{"${zone}_path"}       = [$path, "s"];
+            $status->{"${zone}_dataset"}    = [$dataset, "s"];
 
       $zoneroots .= "$path ";
     };
@@ -145,13 +145,13 @@ sub handler {
     );
 
     unless ( $config->{disable_fsstat} ) {
-	    my $fsstat = run_command("/bin/fsstat $zoneroots 5 2 ");
-	    foreach (split(/\n/, $fsstat)) {
-	      next unless (/^\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/);
-	      my $fs = $12;
+            my $fsstat = run_command("/bin/fsstat $zoneroots 5 2 ");
+            foreach (split(/\n/, $fsstat)) {
+              next unless (/^\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$/);
+              my $fs = $12;
 
         my $fs_read_bytes;
-	      my $fs_read = $9;
+              my $fs_read = $9;
 
         my $fs_write_bytes;
         my $fs_write = $11;
