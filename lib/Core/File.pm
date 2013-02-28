@@ -31,6 +31,13 @@ This module retrieves metrics on a single file such as file age and file size.
 
 The check name specifies which file to monitor.
 
+=item absent
+
+Normally if the file is absent you will get back a single present = 0 metric.
+If absent is set you will instead get back all of the metrics, strings will be
+null and integers will be whatever value you set for absent (present will still
+be 0).
+
 =back
 
 =head1 METRICS
@@ -84,9 +91,30 @@ sub handler {
 
     if (!@statinfo) {
         # File is missing
-        return {
-            "present" => [0, "i"]
+        my $ret = {};
+        if ( defined $config->{absent} ) {
+            $ret = {
+                "present"       => [0, "i"],
+                "permissions"   => [undef, "s"],
+                "hardlinks"     => [$config->{absent},"i"],
+                "uid"           => [undef,"s"],
+                "gid"           => [undef,"s"],
+                "size"          => [$config->{absent},"i"],
+                "atime"         => [$config->{absent},"i"],
+                "mtime"         => [$config->{absent},"i"],
+                "ctime"         => [$config->{absent},"i"],
+                "aage"          => [$config->{absent},"i"],
+                "mage"          => [$config->{absent},"i"],
+                "cage"          => [$config->{absent},"i"]
+            };
         }
+        else {
+            $ret = {
+                "present" => [0, "i"]
+            };
+        }
+
+        return $ret;
     } else {
         my $now = time;
         return {
