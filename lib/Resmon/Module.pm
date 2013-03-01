@@ -28,9 +28,9 @@ sub cache_metrics {
 
 sub get_cached_metrics {
     my $self = shift;
-    return undef unless $self->{check_interval};
+    return undef unless $self->{config}->{interval};
     my $now = time;
-    if(($self->{lastupdate} + $self->{check_interval}) >= $now) {
+    if(($self->{lastupdate} + $self->{config}->{interval}) >= $now) {
         return $self->{lastmetrics};
     }
     return undef;
