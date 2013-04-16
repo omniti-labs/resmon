@@ -20,6 +20,10 @@ Core::ZpoolFree - monitor free space available on ZFS pools
  }
 
  Core::ZpoolFree {
+     poolname : noop
+ }
+
+ Core::ZpoolFree {
      * : zfs_path => '/sbin/zfs'
  }
 
@@ -90,6 +94,36 @@ our %units = (
     'E' => 1152921504606846976,
     'Z' => 1180591620717411303424
 );
+
+sub handler {
+    my $self = shift;
+    my $config = $self->{config}; # All configuration is in here
+    my $pool = $self->{check_name};
+    my $zfs_command = $config->{zfs_command} || "/sbin/zfs";
+    my $zpool_command = $config->{zpool_command} || "/sbin/zpool";
+    my $status = {};
+    # Sanity check
+    die "Invalid pool name: $pool" if $pool !~ /[a-zA-Z0-9_.-]+/;
+    my $zfs_output = run_command(
+        "$zfs_command list -H -o name,used,avail $pool");
+    my ($name, $used, $uunit, $free, $funit) = $zfs_output =~
+        /(\S+)\s+([0-9.]+)([BKMGTPEZ]?)\s+([0-9.]+)([BKMGTPEZ]?)/;
+    # Make sure we were able to match the regex
+    die "Unable to parse zfs command output: $zfs_output\n"
+        unless defined($name);
+    next if ($name =~ /\//); # We're only interested in the root of a pool
+
+    # Convert human readable units to bytes
+    $used = $used * $units{$uunit} if $uunit;
+    $free = $free * $units{$funit} if $funit;
+
+    my $percent_full = sprintf("%.2f", ($used / ($used + $free)) * 100);
+    $status->{"used_MB"} = [int($used/1048576), "i"];
+    $status->{"free_MB"} = [int($free/1048576), "i"];
+    $status->{"percent_full"} = [$percent_full, "n"];
+
+    return $status;
+};
 
 sub wildcard_handler {
     my $self = shift;
