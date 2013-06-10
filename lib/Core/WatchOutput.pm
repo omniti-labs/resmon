@@ -16,7 +16,7 @@ Core::WatchOutout - watch a command's output, reporting it
 =head1 SYNOPSIS
 
  Core::WatchOutput {
-     command: cmd => "/bin/ls"
+     ls: command => "/bin/ls"
  }
 
 =head1 DESCRIPTION
@@ -61,14 +61,14 @@ sub new {
 sub handler {
     my $self = shift;
     my $config = $self->{config};
-    my $command = $self->{command};
+    my $command = $config->{command};
 
     my $output = run_command($command);
     chomp $output;
     my $status = $? >> 8;
 
     return {
-        "output" => [$self->{check_name}, "s"],
+        "output" => [$output, "s"],
         "return_code" => [$status, "i"],
     };
 };
