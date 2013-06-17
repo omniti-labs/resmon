@@ -64,8 +64,8 @@ sub handler {
     my $command = $self->{command};
 
     my $output = run_command($command);
-    my $status = $? >> 8;
     chomp $output;
+    my $status = $? >> 8;
 
     return {
         "output" => [$self->{check_name}, "s"],
