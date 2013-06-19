@@ -16,7 +16,7 @@ sub cache_command {
     my $command = join(" ", @command);
 
     my $now = time;
-    if(defined($commhist{$command}) && $commhist{$command}>$now) {
+    if(defined $commhist{$command}  && $commhist{$command} > $now) {
         return $commcache{$command};
     }
     $commcache{$command} = run_command(@command);
