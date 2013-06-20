@@ -74,7 +74,7 @@ sub handler {
     if($cache) {
         $output = cache_command($command, $cache);
     } else {
-        my $output = run_command($command);
+        $output = run_command($command);
     }
     chomp $output;
     my $status = $? >> 8;
