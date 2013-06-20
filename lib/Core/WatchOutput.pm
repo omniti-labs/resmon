@@ -6,6 +6,7 @@ use warnings;
 use base 'Resmon::Module';
 
 use Resmon::ExtComm qw(run_command cache_command);
+use Scalar::Util 'looks_like_number';
 
 =pod
 
@@ -79,7 +80,7 @@ sub handler {
     my $status = $? >> 8;
 
     return {
-        "output" => [$output, "s"],
+        "output" => [$output, looks_like_number($output) ? "i" : "s"],
         "return_code" => [$status, "i"],
     };
 };
