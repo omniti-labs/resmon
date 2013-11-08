@@ -8,10 +8,10 @@ TIMEOUT 10;
 # address exactly, or an 'ipaddr/n' where ipaddr is the IP address and n is
 # the number of one bits in the netmask.  the first match gives the result, if
 # nothing matches IP is allowed.
-HOSTS ALLOW 10.80.116.112, 127.0.0.1;
-HOSTS DENY 10.80.117.128/25;
-HOSTS ALLOW 10.80.116.0/23;
-HOSTS DENY 0.0.0.0/0;
+#HOSTS ALLOW 10.80.116.112, 127.0.0.1;
+#HOSTS DENY 10.80.117.128/25;
+#HOSTS ALLOW 10.80.116.0/23;
+#HOSTS DENY 0.0.0.0/0;
 
 # Resmon health check. Shows the hostname, svn revision and
 # any problems with modules or the configuration file.
