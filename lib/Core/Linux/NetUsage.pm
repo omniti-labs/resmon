@@ -70,7 +70,6 @@ sub handler {
     my $self = shift;
     my $config = $self->{config};
     my $interface = $config->{interface};
-    print "I have ${interface}\n";
 
     my $stats = get_network_statistics_for($interface);
     return $stats;
@@ -91,6 +90,7 @@ sub get_network_statistics_for {
       <$fh>;
     };
     chomp $stats->{$stat};
+    $stats->{$stat} = [$stats->{$stat}, 'L'];
   }
 
   return $stats;
