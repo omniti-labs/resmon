@@ -131,6 +131,7 @@ sub handler {
         open(MEMINFO, '/proc/meminfo') || die "Unable to read proc: $!\n";
         while (<MEMINFO>) {
             /(\w+)\:\s+(\d+).*/;
+            next unless defined($1);
             $metrics{$1} = [$2, 'L'];
         }
         close(MEMINFO);
