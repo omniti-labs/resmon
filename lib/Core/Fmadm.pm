@@ -36,7 +36,7 @@ This module monitors hardware fault conditions using the Solaris fmadm utility.
 The check name is used for descriptive purposes only.  It is not used for
 anything functional.
 
-=item svcs_path
+=item fmadm_path
 
 Provide an alternate path to the fmadm command (optional).
 
