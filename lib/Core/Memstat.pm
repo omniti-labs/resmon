@@ -146,7 +146,7 @@ sub handler {
             /(.*)\:\s+(\d+).*/;
             $metrics{$1} = [$2, 'L'];
         }
-        for my $page qw( cache inactive active wire free page ) {
+        foreach my $page (qw/cache inactive active wire free page/) {
             $metrics{"vm.stats.vm.v_${page}_count"}->[0] *= ($metrics{'vm.stats.vm.v_page_size'}->[0] / 1024);
         }
         close(SYSCTL);
