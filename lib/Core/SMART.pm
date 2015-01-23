@@ -88,8 +88,7 @@ sub handler {
     my $self = shift;
     my $config = $self->{config};
     my $disk;
-    $disk = "/dev/$self->{check_name}" if $^O eq "linux";
-    $disk = "/dev/r$self->{check_name}" if $^O =~ /bsd/;
+    $disk = "/dev/$self->{check_name}" if ($^O eq "linux") || ($^O =~ /bsd/) ;
     $disk = "/dev/rdsk/$self->{check_name}" if $^O eq "solaris";
     my $smartctl_cmd = $config->{smartctl_cmd} || "/usr/sbin/smartctl";
     my $smartctl_args = "-i -A"; 
