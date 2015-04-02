@@ -85,7 +85,7 @@ sub handler {
     $report = decode_json($report);
 
     $metrics{elapsed} = [ $report->{elapsed_time}, 'F' ];
-    $metrics{change_count} = [ scalar(@{$report->{updated_resources}}), 'I' ];
+    $metrics{change_count} = [ $report->{change_count}, 'I' ];
 
     return \%metrics;
 };
