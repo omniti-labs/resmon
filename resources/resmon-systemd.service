@@ -1,0 +1,12 @@
+[Unit]
+Description=Resmon Monitoring Daemon
+Documentation=http://labs.omniti.com/labs/resmon
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/resmon/resmon
+Restart=always
+
+[Install]
+WantedBy=multy-user.target
