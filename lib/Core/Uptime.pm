@@ -59,10 +59,16 @@ sub handler {
     my $boottime;
 
     if ( $^O eq "solaris" ) {
-       my $zone = 0;
+       my $check_006;
+       open my $release_fh,'<',"/etc/release" or die "Could not find /etc/release";
+       while (my $line = <$release_fh>) {
+          if ($line =~ /r151006/) {
+             $check_006 = $line;
+             chomp($check_006);
+          }
+       }
+       close $release_fh;
 
-       my $check_006 = run_command("grep r151006 /etc/release");
-       chomp($check_006);
        my $zonename = run_command("/usr/bin/zonename");
        chomp $zonename;
 
@@ -77,11 +83,16 @@ sub handler {
 
           ($boottime) =
              $output =~ /^unix:0:system_misc:boot_time\s+(\d+)$/;
-          $uptime =
-              $current_time - $boottime;
+          $uptime = $current_time - $boottime;
       }
     } else {
-       $uptime = run_command("cat /proc/uptime | awk '{print $1}' | cut -d . -f 1");
+       open my $uptime_fh,'<',"/proc/uptime" or die "Could not find /proc/uptime";
+       while (my $line = <$uptime_fh>) {
+           if ($line =~ /^(\d+)\.\d+\s+\d+\.\d+$/) {
+              $uptime = $1;
+           }
+       }
+       close $uptime_fh;
        chomp $uptime;
        $boottime = $current_time - $uptime; 
     } 
